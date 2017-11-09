@@ -1,0 +1,7 @@
+Django==1.9.4
+gunicorn==19.6.0
+djangorestframework
+markdown
+django-filter   
+Pillow
+tensorflow
