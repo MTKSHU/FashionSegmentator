@@ -1,1 +1,3 @@
 fashion_segmentator/db.sqlite3
+fashion_segmentator/api/weights
+fashion_segmentator/api/output
