@@ -11,13 +11,14 @@ import os
 import sys
 import time
 import glob
-
+import json
 from PIL import Image
 
 import tensorflow as tf
 import numpy as np
+import pickle
 
-from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, prepare_label, dense_crf
+from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, prepare_label, dense_crf, code_colours
 
 IMG_MEAN = np.array((151.2413, 144.5654, 136.1296), dtype=np.float32)
     
@@ -52,11 +53,10 @@ def load(saver, sess, ckpt_path):
     saver.restore(sess, ckpt_path)
     print("Restored model parameters from {}".format(ckpt_path))
 
-def main():
+def predict(img_path,num_classes,model_weights,save_dir):
     """Create the model and start the evaluation process."""
-    args = get_arguments()
     # Prepare image.
-    img_orig = tf.image.decode_jpeg(tf.read_file(args.img_path), channels=3)
+    img_orig = tf.image.decode_jpeg(tf.read_file(img_path), channels=3)
     # Convert RGB to BGR.
     img_r, img_g, img_b = tf.split(axis=2, num_or_size_splits=3, value=img_orig)
     img = tf.cast(tf.concat(axis=2, values=[img_b, img_g, img_r]), dtype=tf.float32)
@@ -64,7 +64,7 @@ def main():
     img -= IMG_MEAN 
     
     # Create network.
-    net = DeepLabResNetModel({'data': tf.expand_dims(img, dim=0)}, is_training=False, num_classes=args.num_classes)
+    net = DeepLabResNetModel({'data': tf.expand_dims(img, dim=0)}, is_training=False, num_classes= num_classes)
 
     # Which variables to load.
     restore_var = tf.global_variables()
@@ -91,7 +91,7 @@ def main():
     
     # Load weights.
     loader = tf.train.Saver(var_list=restore_var)
-    load(loader, sess, args.model_weights)
+    load(loader, sess,  model_weights)
     
     # Perform inference.
     import time
@@ -99,14 +99,37 @@ def main():
 
     preds = sess.run(pred)
     
-    msk = decode_labels(preds, num_classes=args.num_classes)
-    im = Image.fromarray(msk[0])
-    if not os.path.exists(args.save_dir):
-        os.makedirs(args.save_dir)
-    im.save(args.save_dir + 'mask.png')
+    msk = decode_labels(preds, num_classes= num_classes)
+    """
+    if not os.path.exists( save_dir):
+        os.makedirs( save_dir)
+    im.save( save_dir + 'mask.png')
     
-    print('The output file has been saved to {}'.format(args.save_dir + 'mask.png'))
-    print(time.time() - t1)
+   
+
+    print('The output file has been saved to {}'.format( save_dir + 'mask.png'))
+    print(time.time() - t1)"""
+
+
+    image = Image.fromarray(msk[0])
+
+    # Create Jsonfile of time
+    data = {}
+    data['time'] = str(time.time() -t1)
+   
+
+    # Create JsonFile of labels used
+    labels_used = np.unique(msk)
+    for l in labels_used:
+        data[str(l)] = code_colours[l]
+
+
+    json_data = json.dumps(data)
+
+    return image, json_data
     
-if __name__ == '__main__':
+
+
+"""if __name__ == '__main__':
     main()
+"""

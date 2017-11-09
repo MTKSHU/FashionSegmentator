@@ -12,6 +12,7 @@ from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 import  os, urllib
 from .function import channel_intensity
+from .inference import predict
 from django.conf import settings
 
 class ImageView(viewsets.ModelViewSet):
@@ -28,9 +29,13 @@ class ImageView(viewsets.ModelViewSet):
             pic = request.data.get('pic')
             obj = Image(name = name, pic = pic)
             obj.save()
-            im = settings.MEDIA_ROOT+'pics/'+pic.name
-            R,G,B = channel_intensity(im)
-            return Response({"message":"Intensito: R:"+str(R)+" G:" +str(G)+ " B:" + str(B)}, status.HTTP_200_OK)
+            im_path = settings.MEDIA_ROOT+'pics/'+pic.name
+            num_classes = 25
+            model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
+            save_dir = './output/'
+            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
+            print(my_json) 
+            return Response({"message":"Calcolato!"}, status.HTTP_200_OK)
         else:
             try:
                 out_path = os.path.join(os.path.dirname(__file__), 'img.jpg')
@@ -42,9 +47,13 @@ class ImageView(viewsets.ModelViewSet):
                 raise ValidationError("Impossibile scaricare correttamente l'immmagine dal web.")
             obj = Image(name = name, urls = pic_urls, pic = F)
             obj.save()
-            im = settings.MEDIA_ROOT+'pics/'+F.name
-            R,G,B = channel_intensity(im)
-            return Response({"message": "Intensità: R:"+str(R)+" G:"+str(G)+" B:"+str(B) }, status.HTTP_200_OK)
+            aim_path = settings.MEDIA_ROOT+'pics/'+F.name
+            num_classes = 25
+            model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
+            save_dir = './output/'
+            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
+            print(my_json) 
+            return Response({"message":"Calcolato!"}, status.HTTP_200_OK)
 
         
 
