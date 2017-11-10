@@ -6,7 +6,7 @@ class Image (models.Model):
     pic = models.ImageField(null=True,blank=True,upload_to=r"pics/")
     urls = models.CharField(null=True,blank=True,max_length=500)
     time = models.DateTimeField(editable=False)
-    
+    zip_result = models.BooleanField(default=False)
     
     # Methods
     def save(self, *args, **kwargs):

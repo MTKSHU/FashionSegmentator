@@ -26,9 +26,14 @@ class ImageView(viewsets.ModelViewSet):
         name = request.data.get('name')
         pic  = request.data.get('pic')            
         pic_urls = request.data.get('urls')
+        res_zip = request.data.get('zip_result')
+        if not res_zip:
+            res_zip = False;
+            
+        print(res_zip)
         if not pic_urls:
             pic = request.data.get('pic')
-            obj = Image(name = name, pic = pic)
+            obj = Image(name = name, pic = pic,zip_result=res_zip)
             obj.save()
             im_path = settings.MEDIA_ROOT+'pics/'+pic.name
             num_classes = 25
@@ -36,18 +41,20 @@ class ImageView(viewsets.ModelViewSet):
             save_dir = './output/'
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
             
-            # Create response zip file
-            zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
-            zipf.write(save_dir + 'mask.png')
-            zipf.write(save_dir + 'json_data.json')
-            zipf.close()
+            if res_zip:
+                # Create response zip file
+                zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
+                zipf.write(save_dir + 'mask.png')
+                zipf.write(save_dir + 'json_data.json')
+                zipf.close()
 
-            zipf_tDownload = open("result_data.zip",'r')
+                zipf_tDownload = open("result_data.zip",'r')
 
-            response = HttpResponse(zipf_tDownload, content_type="application/zip")
-            response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
-            return response
-
+                response = HttpResponse(zipf_tDownload, content_type="application/zip")
+                response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
+                return response
+            else:
+                return HttpResponse(my_json,content_type="application/json")
         else:
             try:
                 out_path = os.path.join(os.path.dirname(__file__), 'img.jpg')
@@ -63,19 +70,22 @@ class ImageView(viewsets.ModelViewSet):
             num_classes = 25
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
             save_dir = './output/'
-            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
+            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir,res_zip)
             
-            # Create response zip file
-            zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
-            zipf.write(mask_file)
-            zipf.write(my_json)
-            zipf.close()
+            if res_zip:
+                # Create response zip file
+                zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
+                zipf.write(save_dir + 'mask.png')
+                zipf.write(save_dir + 'json_data.json')
+                zipf.close()
 
-            zipf_tDownload = open("result_data.zip",'r')
+                zipf_tDownload = open("result_data.zip",'r')
 
-            response = HttpResponse(zipf_tDownload, content_type="application/zip")
-            response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
-            return response
+                response = HttpResponse(zipf_tDownload, content_type="application/zip")
+                response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
+                return response
+            else:
+                return HttpResponse(my_json,content_type="application/json")
         
 
 # ViewSets define the view behavior.
