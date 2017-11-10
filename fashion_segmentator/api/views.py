@@ -10,7 +10,8 @@ from django.core.files.images import ImageFile
 from django.core.exceptions import ValidationError
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-import  os, urllib
+from django.http import HttpResponse
+import  os, urllib, zipfile
 from .function import channel_intensity
 from .inference import predict
 from django.conf import settings
@@ -31,11 +32,22 @@ class ImageView(viewsets.ModelViewSet):
             obj.save()
             im_path = settings.MEDIA_ROOT+'pics/'+pic.name
             num_classes = 25
-            model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
+            model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600' 
             save_dir = './output/'
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
-            print(my_json) 
-            return Response({"message":"Calcolato!"}, status.HTTP_200_OK)
+            
+            # Create response zip file
+            zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
+            zipf.write(save_dir + 'mask.png')
+            zipf.write(save_dir + 'json_data.json')
+            zipf.close()
+
+            zipf_tDownload = open("result_data.zip",'r')
+
+            response = HttpResponse(zipf_tDownload, content_type="application/zip")
+            response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
+            return response
+
         else:
             try:
                 out_path = os.path.join(os.path.dirname(__file__), 'img.jpg')
@@ -52,9 +64,18 @@ class ImageView(viewsets.ModelViewSet):
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
             save_dir = './output/'
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
-            print(my_json) 
-            return Response({"message":"Calcolato!"}, status.HTTP_200_OK)
+            
+            # Create response zip file
+            zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
+            zipf.write(mask_file)
+            zipf.write(my_json)
+            zipf.close()
 
+            zipf_tDownload = open("result_data.zip",'r')
+
+            response = HttpResponse(zipf_tDownload, content_type="application/zip")
+            response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
+            return response
         
 
 # ViewSets define the view behavior.

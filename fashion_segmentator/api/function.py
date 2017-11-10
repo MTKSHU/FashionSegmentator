@@ -17,4 +17,5 @@ def channel_intensity(image):
         G_intensity = sess.run(G_intensity)
         B_intensity = sess.run(B_intensity)
        
-    return R_intensity, G_intensity, B_intensity
+    return R_intensity, G_intensity, 
+

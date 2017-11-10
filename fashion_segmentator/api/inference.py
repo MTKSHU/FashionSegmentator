@@ -19,6 +19,8 @@ import numpy as np
 import pickle
 
 from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, prepare_label, dense_crf, code_colours
+from skimage import data, util
+from skimage.measure import regionprops
 
 IMG_MEAN = np.array((151.2413, 144.5654, 136.1296), dtype=np.float32)
     
@@ -101,9 +103,6 @@ def predict(img_path,num_classes,model_weights,save_dir):
     
     msk = decode_labels(preds, num_classes= num_classes)
     """
-    if not os.path.exists( save_dir):
-        os.makedirs( save_dir)
-    im.save( save_dir + 'mask.png')
     
    
 
@@ -113,19 +112,40 @@ def predict(img_path,num_classes,model_weights,save_dir):
 
     image = Image.fromarray(msk[0])
 
+    if not os.path.exists( save_dir):
+        os.makedirs( save_dir)
+    image.save( save_dir + 'mask.png')
+    
+
     # Create Jsonfile of time
     data = {}
     data['time'] = str(time.time() -t1)
    
 
     # Create JsonFile of labels used
+    data['labels'] = []
     labels_used = np.unique(msk)
     for l in labels_used:
-        data[str(l)] = code_colours[l]
+        label = {}
+        label[str(l)] = code_colours[l]
+        data.get('labels').append(label)
 
+    # Create JsonFile of BoundingBox 
+    props = regionprops(msk[0])
+    data['bounding_box'] = []
+    for pr in props:
+        bb_json = {}
+        bb_json['min_x'] = pr.bbox[0]
+        bb_json['min_y'] = pr.bbox[1]
+        bb_json['max_x'] = pr.bbox[2]
+        bb_json['max_y'] = pr.bbox[3]
+        data.get('bounding_box').append(bb_json)
+    
+    with open(save_dir+'json_data.json', 'w') as outfile:
+        json.dump(data, outfile)
 
     json_data = json.dumps(data)
-
+    
     return image, json_data
     
 

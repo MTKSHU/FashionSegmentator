@@ -6,3 +6,4 @@ django-filter
 Pillow
 tensorflow
 pydensecrf
+scikit-image
