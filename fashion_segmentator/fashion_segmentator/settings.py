@@ -141,3 +141,7 @@ MEDIA_ROOT = '/usr/src/app/fashion_segmentator/media/'
 MEDIA_URL = '/media/'
 
 WEIGHTS_ROOT = '/usr/src/app/fashion_segmentator/api/weights/'
+
+
+
+CORS_ORIGIN_ALLOW_ALL = True

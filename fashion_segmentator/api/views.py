@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from django.shortcuts import render
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, views
 from .models import Image
 from .serializers import ImageSerializers,UserSerializer
 from django.contrib.auth.models import User
@@ -15,24 +15,27 @@ import  os, urllib, zipfile
 from .function import channel_intensity
 from .inference import predict
 from django.conf import settings
+from rest_framework.renderers import JSONRenderer
 
 class ImageView(viewsets.ModelViewSet):
 
     queryset = Image.objects.all()
     serializer_class = ImageSerializers
     permission_classes = (AllowAny, )
+    
     def create(self, request):
-        # Validate the incoming input (provided through post parameters)    
+        # Validate the incoming input (provided through post parameters)   
+        print("Ricevuto") 
         name = request.data.get('name')
         pic  = request.data.get('pic')            
         pic_urls = request.data.get('urls')
         res_zip = request.data.get('zip_result')
         if not res_zip:
-            res_zip = False;
+            res_zip = False
             
         print(res_zip)
         if not pic_urls:
-            pic = request.data.get('pic')
+            print(pic_urls)
             obj = Image(name = name, pic = pic,zip_result=res_zip)
             obj.save()
             im_path = settings.MEDIA_ROOT+'pics/'+pic.name
@@ -64,13 +67,13 @@ class ImageView(viewsets.ModelViewSet):
                 F.name = os.path.basename(pic_urls)
             except:
                 raise ValidationError("Impossibile scaricare correttamente l'immmagine dal web.")
-            obj = Image(name = name, urls = pic_urls, pic = F)
+            obj = Image(name = name, urls = pic_urls, pic = F,zip_result=res_zip)
             obj.save()
             aim_path = settings.MEDIA_ROOT+'pics/'+F.name
             num_classes = 25
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
             save_dir = './output/'
-            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir,res_zip)
+            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
             
             if res_zip:
                 # Create response zip file
@@ -87,6 +90,11 @@ class ImageView(viewsets.ModelViewSet):
             else:
                 return HttpResponse(my_json,content_type="application/json")
         
+"""
+    def create(self,request):
+        print("Ricevuto!!")
+        return Response({"output":"OK"},status.HTTP_200_OK)
+"""
 
 # ViewSets define the view behavior.
 class UserViewSet(viewsets.ModelViewSet):
