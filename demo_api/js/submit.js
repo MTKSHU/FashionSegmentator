@@ -13,7 +13,15 @@ $(document).ready(function(){
 
     $("#clear_btn").on('click', function(e){
         $('#urls').prop("disabled",false);
+        $('input[type=file]').prop("disabled",false);
     });
+
+    $('#urls').on("change",function(){
+        if($(this).val() == "")
+            $('input[type=file]').prop("disabled",false);
+        else
+        $('input[type=file]').prop("disabled",true);
+    })
 
 });
 
@@ -25,8 +33,13 @@ function send_data(){
     var formData = new FormData();
     // Main magic with files here
     var base_url = "http://localhost:8000/";
-    formData.append('pic', $('input[type=file]')[0].files[0]); 
-    formData.append('name', $('input[type=file]')[0].files[0].name.split('.')[0]);
+
+    if($('#urls').val() == ""){
+        formData.append('pic', $('input[type=file]')[0].files[0]); 
+        formData.append('name', $('input[type=file]')[0].files[0].name.split('.')[0]);
+    }
+    else
+        formData.append('name', $('#urls').val().split('/').pop().split('.')[0]);
     formData.append('urls', $('#urls').val());
     formData.append('zip_result', false);
     var result = 
