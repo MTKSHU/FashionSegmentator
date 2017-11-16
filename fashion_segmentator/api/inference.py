@@ -121,6 +121,8 @@ def predict(img_path,num_classes,model_weights,save_dir):
     data = {}
     data['time'] = str(time.time() -t1)
    
+   # Create Jsonfile of pic ref
+    data['pic'] = img_path
 
     # Create JsonFile of labels used
     data['labels'] = []
