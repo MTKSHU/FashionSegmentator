@@ -10,7 +10,7 @@ from django.core.files.images import ImageFile
 from django.core.exceptions import ValidationError
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import  os, urllib, zipfile
 from .function import channel_intensity
 from .inference import predict
@@ -22,20 +22,19 @@ class ImageView(viewsets.ModelViewSet):
     queryset = Image.objects.all()
     serializer_class = ImageSerializers
     permission_classes = (AllowAny, )
-    
     def create(self, request):
         # Validate the incoming input (provided through post parameters)   
-        print("Ricevuto") 
-        name = request.data.get('name')
-        pic  = request.data.get('pic')            
-        pic_urls = request.data.get('urls')
-        res_zip = request.data.get('zip_result')
-        if not res_zip:
-            res_zip = False
+        
+
+        serializer = ImageSerializers(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        name = serializer.validated_data.get('name')
+        pic  = serializer.validated_data.get('pic')            
+        pic_urls = serializer.validated_data.get('urls')
+        res_zip = serializer.validated_data.get('zip_result')
             
-        print(res_zip)
         if not pic_urls:
-            print(pic_urls)
             obj = Image(name = name, pic = pic,zip_result=res_zip)
             obj.save()
             im_path = settings.MEDIA_ROOT+'pics/'+pic.name
@@ -43,7 +42,6 @@ class ImageView(viewsets.ModelViewSet):
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600' 
             save_dir = './output/'
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
-            
             if res_zip:
                 # Create response zip file
                 zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
@@ -52,12 +50,13 @@ class ImageView(viewsets.ModelViewSet):
                 zipf.close()
 
                 zipf_tDownload = open("result_data.zip",'r')
-
+                print("Stampa ZIP")
                 response = HttpResponse(zipf_tDownload, content_type="application/zip")
                 response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
                 return response
             else:
-                return HttpResponse(my_json,content_type="application/json")
+                print("Stampa JSON")
+                return  HttpResponse(my_json,content_type="application/json")
         else:
             try:
                 out_path = os.path.join(os.path.dirname(__file__), 'img.jpg')
@@ -74,7 +73,6 @@ class ImageView(viewsets.ModelViewSet):
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
             save_dir = './output/'
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
-            
             if res_zip:
                 # Create response zip file
                 zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
@@ -88,13 +86,7 @@ class ImageView(viewsets.ModelViewSet):
                 response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
                 return response
             else:
-                return HttpResponse(my_json,content_type="application/json")
-        
-"""
-    def create(self,request):
-        print("Ricevuto!!")
-        return Response({"output":"OK"},status.HTTP_200_OK)
-"""
+                return  HttpResponse(my_json,content_type="application/json")
 
 # ViewSets define the view behavior.
 class UserViewSet(viewsets.ModelViewSet):
