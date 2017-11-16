@@ -4,8 +4,17 @@ $(document).ready(function(){
         e.preventDefault();
 		e.stopPropagation();
         send_data();
-        return true;
     });
+
+    $('input[type=file]').change(function() { 
+        // select the form and submit
+        $('#urls').prop("disabled",true);
+    });
+
+    $("#clear_btn").on('click', function(e){
+        $('#urls').prop("disabled",false);
+    });
+
 });
 
 
@@ -13,51 +22,34 @@ $(document).ready(function(){
 
 function send_data(){
     console.log("Click");
-
     var formData = new FormData();
     // Main magic with files here
+    var base_url = "http://localhost:8000/";
     formData.append('pic', $('input[type=file]')[0].files[0]); 
-    formData.append('name', $("#name").val());
-    formData.append('zip_result', $("#down_archive").prop('checked'));
-    $.ajax({
-        url: "http://0.0.0.0:8000/images/",
+    formData.append('name', $('input[type=file]')[0].files[0].name.split('.')[0]);
+    formData.append('urls', $('#urls').val());
+    formData.append('zip_result', false);
+    var result = 
+        $.ajax({
+        url: base_url + "images/",
         type:"POST",
-        data: formData,
-        contentType: "multipart/form-data",
-        processData: false,
+        data: formData,     
+        contentType: false,
+        processData:false,
+        dataType:"json",
+        cache:false,
         success: function(data){
+            //http://localhost:8000/media/pics/""
             console.log(data);
-            $('#demo-title').html("success");
-            return true;
+            var pic_path = base_url + data['pic'].split('/')[5] + '/' + data['pic'].split('/')[6] + '/' +data['pic'].split('/')[7];
+            console.log(pic_path);
+            $("#res_img").attr('src',pic_path);
+            return false;
         },
         error: function (XMLHttpRequest, textStatus, errorThrown){
             console.log(XMLHttpRequest)
-            $('#demo-title').html("fail");
             return false;
 
-        },
-        complete: function( data ,  textStatus ){
-            console.log(textStatus)
         }
     });
-
-/*
-    $.ajax({
-        url: "0.0.0.0:8000/images/",
-        type:"POST",
-        dataType: "text",
-        data: {"name":"ciao"},
-        contentType: "application/json",
-        success: function(data){
-            console.log(data);
-            $('#demo-title').html("success");
-            return false;
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown){
-            console.log(XMLHttpRequest)
-            $('#demo-title').html("fail");
-            return false;
-
-        }
-    });*/
 }
