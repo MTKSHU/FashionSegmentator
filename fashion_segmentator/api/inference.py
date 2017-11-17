@@ -20,7 +20,6 @@ import pickle
 
 from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, prepare_label, dense_crf, code_colours
 from skimage import data, util
-from skimage.measure import regionprops
 
 IMG_MEAN = np.array((151.2413, 144.5654, 136.1296), dtype=np.float32)
     
@@ -54,6 +53,28 @@ def load(saver, sess, ckpt_path):
     ''' 
     saver.restore(sess, ckpt_path)
     print("Restored model parameters from {}".format(ckpt_path))
+
+
+def extract_region(im,label_used):
+    print(label_used)
+    a = []
+    b = []
+    c = []
+    d = []
+    for lab in label_used:
+        if lab != 0 and lab != 1 and lab != 2:
+            indexes = np.where(im==lab)
+            min_y = np.amin(indexes[0])
+            max_y = np.amax(indexes[0])
+            min_x = np.amin(indexes[1])
+            max_x = np.amax(indexes[1])
+            a.append(min_x)
+            b.append(max_x)
+            c.append(min_y) 
+            d.append(max_y)
+    bboxes = zip(a,b,c,d)
+    return bboxes
+    
 
 def predict(img_path,num_classes,model_weights,save_dir):
     """Create the model and start the evaluation process."""
@@ -133,14 +154,15 @@ def predict(img_path,num_classes,model_weights,save_dir):
         data.get('labels').append(label)
 
     # Create JsonFile of BoundingBox 
-    props = regionprops(msk[0])
+    bboxes = extract_region(msk[0],labels_used)
+    print(len(bboxes))
     data['bounding_box'] = []
-    for pr in props:
+    for bbox in bboxes:
         bb_json = {}
-        bb_json['min_x'] = pr.bbox[0]
-        bb_json['min_y'] = pr.bbox[1]
-        bb_json['max_x'] = pr.bbox[2]
-        bb_json['max_y'] = pr.bbox[3]
+        bb_json['min_x'] = bbox[0]
+        bb_json['max_x'] = bbox[1]
+        bb_json['min_y'] = bbox[2]
+        bb_json['max_y'] = bbox[3]
         data.get('bounding_box').append(bb_json)
     
     with open(save_dir+'json_data.json', 'w') as outfile:
@@ -155,3 +177,7 @@ def predict(img_path,num_classes,model_weights,save_dir):
 """if __name__ == '__main__':
     main()
 """
+
+
+
+    

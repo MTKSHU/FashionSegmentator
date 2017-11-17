@@ -24,11 +24,8 @@ class ImageView(viewsets.ModelViewSet):
     permission_classes = (AllowAny, )
     def create(self, request):
         # Validate the incoming input (provided through post parameters)   
-        
-
         serializer = ImageSerializers(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-
         name = serializer.validated_data.get('name')
         pic  = serializer.validated_data.get('pic')            
         pic_urls = serializer.validated_data.get('urls')
@@ -48,19 +45,14 @@ class ImageView(viewsets.ModelViewSet):
                 zipf.write(save_dir + 'mask.png')
                 zipf.write(save_dir + 'json_data.json')
                 zipf.close()
-
                 zipf_tDownload = open("result_data.zip",'r')
-                print("Stampa ZIP")
                 response = HttpResponse(zipf_tDownload, content_type="application/zip")
                 response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
                 return response
             else:
-                print("Stampa JSON")
                 return  HttpResponse(my_json,content_type="application/json")
         else:
             try:
-                print(pic_urls)
-
                 r = requests.get(pic_urls, stream=True)
                 if r.status_code == 200:
                     with open(os.path.join(os.path.dirname(__file__), 'img.jpg'), 'wb+') as f:
