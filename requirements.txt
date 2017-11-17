@@ -8,3 +8,4 @@ tensorflow
 pydensecrf
 scikit-image
 django-cors-headers
+requests

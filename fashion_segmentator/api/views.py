@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 from django.http import HttpResponse, JsonResponse
-import  os, urllib, zipfile
+import  os, urllib, zipfile, requests, shutil
 from .function import channel_intensity
 from .inference import predict
 from django.conf import settings
@@ -59,16 +59,22 @@ class ImageView(viewsets.ModelViewSet):
                 return  HttpResponse(my_json,content_type="application/json")
         else:
             try:
-                out_path = os.path.join(os.path.dirname(__file__), 'img.jpg')
-                urllib.request.urlretrieve(pic_urls, out_path)
-                out_file = open(out_path, 'rb+')
-                F = ImageFile(out_file)
-                F.name = os.path.basename(pic_urls)
+                print(pic_urls)
+
+                r = requests.get(pic_urls, stream=True)
+                if r.status_code == 200:
+                    with open(os.path.join(os.path.dirname(__file__), 'img.jpg'), 'wb+') as f:
+                        r.raw.decode_content = True
+                        shutil.copyfileobj(r.raw, f)
+                        out_file = open(os.path.join(os.path.dirname(__file__), 'img.jpg'), 'rb+') 
+                        F = ImageFile(out_file)
+                        F.name = os.path.basename(pic_urls)
             except:
                 raise ValidationError("Impossibile scaricare correttamente l'immmagine dal web.")
+            print(F.name)
             obj = Image(name = name, urls = pic_urls, pic = F,zip_result=res_zip)
             obj.save()
-            aim_path = settings.MEDIA_ROOT+'pics/'+F.name
+            im_path = settings.MEDIA_ROOT+'pics/'+F.name
             num_classes = 25
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
             save_dir = './output/'
