@@ -56,7 +56,6 @@ def load(saver, sess, ckpt_path):
 
 
 def extract_region(im,label_used):
-    print(label_used)
     a = []
     b = []
     c = []
@@ -155,7 +154,6 @@ def predict(img_path,num_classes,model_weights,save_dir):
 
     # Create JsonFile of BoundingBox 
     bboxes = extract_region(msk[0],labels_used)
-    print(len(bboxes))
     data['bounding_box'] = []
     for bbox in bboxes:
         bb_json = {}
