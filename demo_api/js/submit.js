@@ -55,8 +55,20 @@ function send_data(){
             //http://localhost:8000/media/pics/""
             console.log(data);
             var pic_path = base_url + data['pic'].split('/')[5] + '/' + data['pic'].split('/')[6] + '/' +data['pic'].split('/')[7];
-            console.log(pic_path);
             $("#res_img").attr('src',pic_path);
+            $(".child").remove();
+            nbb = data['bounding_box'].length;
+            offs = Math.round(255/nbb,0);
+            r=0;
+            g=0;
+            b=0;
+            for(var i=0;i<data['bounding_box'].length;i++){
+                console.log(data['bounding_box'][i]);
+                r+=((i)%3==0)*offs;
+                g+=((i)%3==1)*offs;
+                b+=((i)%3==2)*offs;
+                add_rect('rgb('+r+','+g+','+b+')',data['bounding_box'][i]);
+            }         
             return false;
         },
         error: function (XMLHttpRequest, textStatus, errorThrown){
@@ -66,3 +78,15 @@ function send_data(){
         }
     });
 }
+
+
+var add_rect = function(color, rect) {
+    var $container = $("#container");
+    $('<div class="child"/>')
+    .appendTo($container)
+    .css("left", rect['min_x'] + "px")
+    .css("top", rect['min_y'] + "px")
+    .css("width", (rect['max_x']-rect['min_x'])+"px")
+    .css("height", (rect['max_y']-rect['min_y'])+"px")
+    .css("border", "5px solid " + color);
+};
