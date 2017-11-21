@@ -149,7 +149,8 @@ def predict(img_path,num_classes,model_weights,save_dir):
     labels_used = np.unique(msk)
     for l in labels_used:
         label = {}
-        label[str(l)] = code_colours[l]
+        label['label'] = code_colours[l]
+        label['num'] = str(l)
         data.get('labels').append(label)
 
     # Create JsonFile of BoundingBox 
