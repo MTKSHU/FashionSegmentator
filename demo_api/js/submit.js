@@ -21,8 +21,10 @@ $(document).ready(function(){
             $('input[type=file]').prop("disabled",false);
         else
         $('input[type=file]').prop("disabled",true);
-    })
+    });
 
+    $("#box_result").prop("hidden",true);
+    
 });
 
 
@@ -33,7 +35,7 @@ function send_data(){
     var formData = new FormData();
     // Main magic with files here
     var base_url = "http://localhost:8000/";
-
+    $("#waitbar").removeClass('hidden');
     if($('#urls').val() == ""){
         formData.append('pic', $('input[type=file]')[0].files[0]); 
         formData.append('name', $('input[type=file]')[0].files[0].name.split('.')[0]);
@@ -54,25 +56,28 @@ function send_data(){
         success: function(data){
             //http://localhost:8000/media/pics/""
             console.log(data);
+            $("#box_result").prop("hidden",false);
             var pic_path = base_url + data['pic'].split('/')[5] + '/' + data['pic'].split('/')[6] + '/' +data['pic'].split('/')[7];
             $("#res_img").attr('src',pic_path);
-            $(".child").remove();
-            nbb = data['bounding_box'].length;
-            offs = Math.round(255/nbb,0);
-            r=0;
-            g=0;
-            b=0;
-            for(var i=0;i<data['bounding_box'].length;i++){
-                console.log(data['bounding_box'][i]);
-                r+=((i)%3==0)*offs;
-                g+=((i)%3==1)*offs;
-                b+=((i)%3==2)*offs;
-                add_rect('rgb('+r+','+g+','+b+')',data['bounding_box'][i]);
-            }         
+            $("li").remove();
+            for(var i=0;i<data['bounding_box'].length;i++){                
+                add_label_info(i,data['labels'][i+3])
+            }
+            $('.label').on('click',function(){
+                var ind = $(this).attr('id');
+                $(".label").removeClass('selected');
+                $(this).addClass('selected');
+                $(".child").remove();
+                add_rect("red",data['bounding_box'][ind]);
+            });
+            $('#0').click();         
+            $("#waitbar").addClass('hidden');
             return false;
         },
         error: function (XMLHttpRequest, textStatus, errorThrown){
             console.log(XMLHttpRequest)
+            $("#waitbar").addClass('hidden');
+            alert("Elaboration Error!!");
             return false;
 
         }
@@ -82,11 +87,18 @@ function send_data(){
 
 var add_rect = function(color, rect) {
     var $container = $("#container");
-    $('<div class="child"/>')
+    $('<div class="child" />')
     .appendTo($container)
-    .css("left", rect['min_x'] + "px")
-    .css("top", rect['min_y'] + "px")
-    .css("width", (rect['max_x']-rect['min_x'])+"px")
-    .css("height", (rect['max_y']-rect['min_y'])+"px")
+    .css("left", (rect['min_x']-15) + "px")
+    .css("top", (rect['min_y']-15) + "px")
+    .css("width", (rect['max_x']-rect['min_x']+30)+"px")
+    .css("height", (rect['max_y']-rect['min_y']+30)+"px")
     .css("border", "5px solid " + color);
+
 };
+
+var add_label_info = function(index,label_text){
+    label_text = label_text['label'];
+    var $labels_container = $("#labels");
+    $("<li><i class='fa fa-check' /><span class='label' id='"+index+"'>"+label_text+"</span></li>").appendTo($labels_container);
+}   
