@@ -61,7 +61,7 @@ function send_data(){
             $("#res_img").attr('src',pic_path);
             $("li").remove();
             for(var i=0;i<data['bounding_box'].length;i++){                
-                add_label_info(i,data['labels'][i+3])
+                add_label_info(i,data['labels'][i+2])
             }
             $('.label').on('click',function(){
                 var ind = $(this).attr('id');
