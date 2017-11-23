@@ -60,8 +60,15 @@ function send_data(){
             var pic_path = base_url + data['pic'].split('/')[5] + '/' + data['pic'].split('/')[6] + '/' +data['pic'].split('/')[7];
             $("#res_img").attr('src',pic_path);
             $("li").remove();
-            for(var i=0;i<data['bounding_box'].length;i++){                
-                add_label_info(i,data['labels'][i+2])
+
+            var rules = new Array(7);
+            var label_rules = new Array([5,7,11,13,15,16,17,18,19,20,21,22]);
+            for(var i=0;i<data['bounding_box'].length;i++){      
+                if(!inArray(data['labels'][i+2]['num'],label_rules))  
+                    console.log("Aggiungo dopo!");              
+                else
+                    add_label_info(i,data['labels'][i+2]);
+                
             }
             $('.label').on('click',function(){
                 var ind = $(this).attr('id');
