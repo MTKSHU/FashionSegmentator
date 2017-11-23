@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 from django.http import HttpResponse, JsonResponse
-import  os, urllib, zipfile, requests, shutil
+import  os, urllib, zipfile, requests, shutil, json
 from .function import channel_intensity
 from .inference import predict
 from django.conf import settings
@@ -41,6 +41,8 @@ class ImageView(viewsets.ModelViewSet):
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
             if res_zip:
                 # Create response zip file
+                with open(save_dir+'json_data.json', 'w') as outfile:
+                    json.dump(my_json, outfile)
                 zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
                 zipf.write(save_dir + 'mask.png')
                 zipf.write(save_dir + 'json_data.json')
@@ -50,7 +52,8 @@ class ImageView(viewsets.ModelViewSet):
                 response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
                 return response
             else:
-                return  HttpResponse(my_json,content_type="application/json")
+                json_data = json.dumps(my_json)
+                return  HttpResponse(json_data,content_type="application/json")
         else:
             try:
                 r = requests.get(pic_urls, stream=True)
@@ -73,6 +76,8 @@ class ImageView(viewsets.ModelViewSet):
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
             if res_zip:
                 # Create response zip file
+                with open(save_dir+'json_data.json', 'w') as outfile:
+                    json.dump(my_json, outfile)
                 zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
                 zipf.write(save_dir + 'mask.png')
                 zipf.write(save_dir + 'json_data.json')
@@ -84,7 +89,8 @@ class ImageView(viewsets.ModelViewSet):
                 response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
                 return response
             else:
-                return  HttpResponse(my_json,content_type="application/json")
+                json_data = json.dumps(my_json)
+                return  HttpResponse(json_data,content_type="application/json")
 
 # ViewSets define the view behavior.
 class UserViewSet(viewsets.ModelViewSet):

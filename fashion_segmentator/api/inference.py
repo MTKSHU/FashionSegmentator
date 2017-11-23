@@ -20,6 +20,7 @@ import pickle
 
 from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, prepare_label, dense_crf, code_colours
 from skimage import data, util
+from skimage.measure import regionprops
 
 IMG_MEAN = np.array((151.2413, 144.5654, 136.1296), dtype=np.float32)
     
@@ -98,10 +99,10 @@ def predict(img_path,num_classes,model_weights,save_dir):
     # CRF.
     raw_output_up = tf.nn.softmax(raw_output_up)
     raw_output_up = tf.py_func(dense_crf, [raw_output_up, tf.expand_dims(img_orig, dim=0)], tf.float32)
-
+    raw_output_score = tf.reduce_max(raw_output_up,reduction_indices=[3])
     raw_output_up = tf.argmax(raw_output_up, dimension=3)
     pred = tf.expand_dims(raw_output_up, dim=3)
-
+    pred_score = tf.expand_dims(raw_output_score,dim=3)
     
     # Set up TF session and initialize variables. 
     config = tf.ConfigProto()
@@ -120,15 +121,38 @@ def predict(img_path,num_classes,model_weights,save_dir):
     t1 = time.time()
 
     preds = sess.run(pred)
+
+
+    # scores[0] contiene lo score massimo calcolato per ogni pixel ( 674 x 450 )
+    scores = sess.run(pred_score)
     
+    
+
     msk = decode_labels(preds, num_classes= num_classes)
     """
     
-   
+    
 
     print('The output file has been saved to {}'.format( save_dir + 'mask.png'))
     print(time.time() - t1)"""
 
+    prop = regionprops(msk[0,:,:,0])
+
+    means = []
+    labels_means = []
+    threshold = 0.98
+    for pr in prop:
+        indexes = pr.coords
+        
+        print(len(indexes))
+        scores_tmp = np.array(scores[0,indexes[:,0],indexes[:,1]])
+        means_tmp = np.mean(scores_tmp)
+        if means_tmp >= threshold :
+            means.append(np.mean(scores_tmp))
+            labels_means.append(msk[0,indexes[0,0],indexes[0,1],0])
+
+    print(means)
+    print(labels_means)
 
     image = Image.fromarray(msk[0])
 
@@ -137,39 +161,38 @@ def predict(img_path,num_classes,model_weights,save_dir):
     image.save( save_dir + 'mask.png')
     
 
-    # Create Jsonfile of time
+    # Create Dictionary of time
     data = {}
     data['time'] = str(time.time() -t1)
    
-   # Create Jsonfile of pic ref
+   # Create Dictionary of pic ref
     data['pic'] = img_path
 
-    # Create JsonFile of labels used
+    # Create Dictionary of labels used
     data['labels'] = []
-    labels_used = np.unique(msk)
-    for l in labels_used:
+    idx = 0
+    for l in labels_means:
         label = {}
         label['label'] = code_colours[l]
         label['num'] = str(l)
+        label['score'] = str(means[idx])
         data.get('labels').append(label)
+        idx+=1
 
-    # Create JsonFile of BoundingBox 
-    bboxes = extract_region(msk[0],labels_used)
+    # Create Dictionary of BoundingBox 
+    bboxes = extract_region(msk[0],labels_means)
     data['bounding_box'] = []
     for bbox in bboxes:
-        bb_json = {}
-        bb_json['min_x'] = bbox[0]
-        bb_json['max_x'] = bbox[1]
-        bb_json['min_y'] = bbox[2]
-        bb_json['max_y'] = bbox[3]
-        data.get('bounding_box').append(bb_json)
+        bb = {}
+        bb['min_x'] = bbox[0]
+        bb['max_x'] = bbox[1]
+        bb['min_y'] = bbox[2]
+        bb['max_y'] = bbox[3]
+        data.get('bounding_box').append(bb)
     
-    with open(save_dir+'json_data.json', 'w') as outfile:
-        json.dump(data, outfile)
-
-    json_data = json.dumps(data)
     
-    return image, json_data
+    
+    return image, data
     
 
 
