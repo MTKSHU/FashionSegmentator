@@ -19,5 +19,6 @@ echo Starting Unicorn.
 
 exec gunicorn fashion_segmentator.wsgi:application \
     --bind 0.0.0.0:8000\
+    --timeout 120
     --workers 3
     --log-level debug
