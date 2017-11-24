@@ -64,12 +64,16 @@ function send_data(){
             var rules_res = new Array(7);
             var label_rules = [5,7,11,13,15,16,17,18,19,20,21,22];
             var mapping_bb = new Array(25);
-            for(var j=0;j<data['bounding_box'].length;j++){
-                console.log(data['labels'][j+2]['num']);      
-                if((label_rules.indexOf(parseInt(data['labels'][j+2]['num'])))!= -1) 
-                    mapping_bb[data['labels'][j+2]['num']] = j;
-                else
-                    add_label_info(j,data['labels'][j+2]);  
+            var offs = 0;
+            for(var j=0;j<data['labels'].length;j++){
+                if(parseInt(data['labels'][j]['num']) < 3)
+                    offs++;
+                else{
+                    if((label_rules.indexOf(parseInt(data['labels'][j]['num'])))!= -1) 
+                        mapping_bb[data['labels'][j]['num']] = j-offs;
+                    else
+                        add_label_info(j-offs,data['labels'][j]);  
+                }
             }
 
 
