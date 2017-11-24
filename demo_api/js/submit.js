@@ -61,82 +61,15 @@ function send_data(){
             $("#res_img").attr('src',pic_path);
             $("li").remove();
 
-            var rules_res = new Array(7);
-            var label_rules = [5,7,11,13,15,16,17,18,19,20,21,22];
-            var mapping_bb = new Array(25);
-            for(var j=0;j<data['bounding_box'].length;j++){
-                console.log(data['labels'][j+2]['num']);      
-                if((label_rules.indexOf(parseInt(data['labels'][j+2]['num'])))!= -1) 
-                    mapping_bb[data['labels'][j+2]['num']] = j;
+            var rules = new Array(7);
+            var label_rules = new Array([5,7,11,13,15,16,17,18,19,20,21,22]);
+            for(var i=0;i<data['bounding_box'].length;i++){      
+                if(!inArray(data['labels'][i+2]['num'],label_rules))  
+                    console.log("Aggiungo dopo!");              
                 else
-                    add_label_info(j,data['labels'][j+2]);  
+                    add_label_info(i,data['labels'][i+2]);
+                
             }
-
-
-            var boots = getObjects(data,'num','5')[0];
-            var dress = getObjects(data,'num','7')[0];
-            var blazer = getObjects(data,'num','11')[0];
-            var jeans = getObjects(data,'num','13')[0];
-            var shirt = getObjects(data,'num','15')[0];
-            var shoes = getObjects(data,'num','16')[0];
-            var shorts = getObjects(data,'num','17')[0];
-            var skirt = getObjects(data,'num','18')[0];
-            var socks = getObjects(data,'num','19')[0];
-            var cardigan = getObjects(data,'num','24')[0];
-            var leggins = getObjects(data,'num','21')[0];
-            var t_shirt = getObjects(data,'num','22')[0];
-            var vest = getObjects(data,'num','23')[0];
-            var vest2 = getObjects(data,'num','24')[0];
-
-            var rule_el = max_dress([dress,skirt]);
-            if(rule_el != -1){
-                rules_res[0] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
-            }
-
-            var rule_el = max_dress([jeans,leggins,shorts]);
-            if(rule_el != -1){
-                rules_res[1] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
-            }
-
-            var rule_el = max_dress([boots,shoes,socks]);
-            if(rule_el != -1){
-                rules_res[2] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
-            }
-
-            var rule_el = max_dress([vest,vest2]);
-            if(rule_el != -1){
-                rules_res[3] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
-            }
-
-            var rule_el = max_dress([shirt,t_shirt,blazer]);
-            if(rule_el != -1){
-                rules_res[4] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
-            }
-            
-            
-            if(rules_res[0] == undefined && rules_res[4] == undefined ){
-                var rule_el = max_dress([shirt,t_shirt,dress]);
-                if(rule_el != -1){
-                    rules_res[5] = rule_el['label'];
-                    add_label_info(mapping_bb[rule_el['num']],rule_el);
-                }
-            }
-            
-            if(rules_res[4] != 'jacket/blazer') { 
-                var rule_el = max_dress([cardigan,blazer]);
-                if(rule_el != -1){
-                    rules_res[6] = rule_el['label'];
-                    add_label_info(mapping_bb[rule_el['num']],rule_el);
-                }
-            }
-
-
-
             $('.label').on('click',function(){
                 var ind = $(this).attr('id');
                 $(".label").removeClass('selected');
@@ -176,32 +109,3 @@ var add_label_info = function(index,label_text){
     var $labels_container = $("#labels");
     $("<li><i class='fa fa-check' /><span class='label' id='"+index+"'>"+label_text+"</span></li>").appendTo($labels_container);
 }   
-
-
-var getObjects = function(obj, key, val) {
-    var objects = [];
-    for (var i in obj) {
-        if (!obj.hasOwnProperty(i)) continue;
-        if (typeof obj[i] == 'object') {
-            objects = objects.concat(getObjects(obj[i], key, val));
-        } else if (i == key && obj[key] == val) {
-            objects.push(obj);
-        }
-    }
-    return objects;
-}
-
-
-var max_dress = function(arr){
-    max = 0;
-    el_max = -1;
-    for(var j=0;j<arr.length;j++)
-        if(arr[j]!=undefined)
-            if(arr[j]['score'] > max)
-            {
-                max = arr[j]['score'];
-                el_max = arr[j];
-            }
-    return el_max;
-
-}
