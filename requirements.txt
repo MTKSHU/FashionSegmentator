@@ -9,3 +9,4 @@ pydensecrf
 scikit-image
 django-cors-headers
 requests
+python-resize-image

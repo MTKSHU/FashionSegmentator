@@ -2,7 +2,7 @@
 
 from django.shortcuts import render
 from rest_framework import viewsets, status, views
-from .models import Image
+from .models import ImageUploaded
 from .serializers import ImageSerializers,UserSerializer
 from django.contrib.auth.models import User
 from .permissions import IsAdminOrReadOnly, AllowAny
@@ -16,10 +16,12 @@ from .function import channel_intensity
 from .inference import predict
 from django.conf import settings
 from rest_framework.renderers import JSONRenderer
+from resizeimage import resizeimage
+from PIL import Image
 
 class ImageView(viewsets.ModelViewSet):
 
-    queryset = Image.objects.all()
+    queryset = ImageUploaded.objects.all()
     serializer_class = ImageSerializers
     permission_classes = (AllowAny, )
     def create(self, request):
@@ -32,12 +34,17 @@ class ImageView(viewsets.ModelViewSet):
         res_zip = serializer.validated_data.get('zip_result')
             
         if not pic_urls:
-            obj = Image(name = name, pic = pic,zip_result=res_zip)
+            obj = ImageUploaded(name = name, pic = pic,zip_result=res_zip)
             obj.save()
             im_path = settings.MEDIA_ROOT+'pics/'+pic.name
             num_classes = 25
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600' 
             save_dir = './output/'
+            with open(im_path, 'r+b') as f:
+                with Image.open(f) as image:
+                    if image.size[1] > 700:
+                        cover = resizeimage.resize_height(image,700)
+                        cover.save(im_path, image.format)
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
             if res_zip:
                 # Create response zip file
@@ -66,13 +73,17 @@ class ImageView(viewsets.ModelViewSet):
                         F.name = os.path.basename(pic_urls)
             except:
                 raise ValidationError("Impossibile scaricare correttamente l'immmagine dal web.")
-            print(F.name)
-            obj = Image(name = name, urls = pic_urls, pic = F,zip_result=res_zip)
+            obj = ImageUploaded(name = name, urls = pic_urls, pic = F,zip_result=res_zip)
             obj.save()
             im_path = settings.MEDIA_ROOT+'pics/'+F.name
             num_classes = 25
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
             save_dir = './output/'
+            with open(im_path, 'r+b') as f:
+                with Image.open(f) as image:
+                    if image.size[1] > 700:
+                        cover = resizeimage.resize_height(image,700)
+                        cover.save(im_path, image.format)
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
             if res_zip:
                 # Create response zip file

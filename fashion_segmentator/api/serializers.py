@@ -1,10 +1,10 @@
 from rest_framework import serializers
-from .models import Image
+from .models import ImageUploaded
 from django.contrib.auth.models import User
 
 class ImageSerializers (serializers.ModelSerializer):
     class Meta:
-        model = Image
+        model = ImageUploaded
         fields = '__all__'
 
 # Serializers define the API representation.
