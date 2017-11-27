@@ -42,9 +42,9 @@ class ImageView(viewsets.ModelViewSet):
             save_dir = './output/'
             with open(im_path, 'r+b') as f:
                 with Image.open(f) as image:
-                    if image.size[1] > 700:
-                        cover = resizeimage.resize_height(image,700)
-                        cover.save(im_path, image.format)
+                    if image.size[1] > 600:
+                        cover = resizeimage.resize_height(image,600)
+                        cover.save(im_path,image.format)
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
             if res_zip:
                 # Create response zip file
@@ -77,13 +77,13 @@ class ImageView(viewsets.ModelViewSet):
             obj.save()
             im_path = settings.MEDIA_ROOT+'pics/'+F.name
             num_classes = 25
-            model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600'
+            model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600' 
             save_dir = './output/'
             with open(im_path, 'r+b') as f:
                 with Image.open(f) as image:
-                    if image.size[1] > 700:
-                        cover = resizeimage.resize_height(image,700)
-                        cover.save(im_path, image.format)
+                    if image.size[1] > 600:
+                        cover = resizeimage.resize_height(image,600)
+                        cover.save(im_path,image.format)
             mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
             if res_zip:
                 # Create response zip file

@@ -103,29 +103,32 @@ def predict(img_path,num_classes,model_weights,save_dir):
     raw_output_up = tf.argmax(raw_output_up, dimension=3)
     pred = tf.expand_dims(raw_output_up, dim=3)
     pred_score = tf.expand_dims(raw_output_score,dim=3)
+  
     
     # Set up TF session and initialize variables. 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
-    sess = tf.Session(config=config)
-    init = tf.global_variables_initializer()
+    with tf.Session(config=config) as sess:
+        init = tf.global_variables_initializer()
     
-    sess.run(init)
+        sess.run(init)
     
-    # Load weights.
-    loader = tf.train.Saver(var_list=restore_var)
-    load(loader, sess,  model_weights)
+        # Load weights.
+        loader = tf.train.Saver(var_list=restore_var)
+        load(loader, sess,  model_weights)
     
-    # Perform inference.
-    import time
-    t1 = time.time()
+        # Perform inference.
+        import time
+        t1 = time.time()
 
-    preds = sess.run(pred)
+        preds = sess.run(pred)
 
 
-    # scores[0] contiene lo score massimo calcolato per ogni pixel ( 674 x 450 )
-    scores = sess.run(pred_score)
-    
+        # scores[0] contiene lo score massimo calcolato per ogni pixel ( 674 x 450 )
+        scores = sess.run(pred_score)
+
+
+    tf.reset_default_graph()
     
 
     msk = decode_labels(preds, num_classes= num_classes)
@@ -140,7 +143,7 @@ def predict(img_path,num_classes,model_weights,save_dir):
 
     means = []
     labels_means = []
-    threshold = 0.98
+    threshold = 0.95
     for pr in prop:
         indexes = pr.coords
         
@@ -154,6 +157,102 @@ def predict(img_path,num_classes,model_weights,save_dir):
     print(means)
     print(labels_means)
 
+    my_msk = msk
+    labels = []
+
+    #Rule 1 : (skirt - shirt) vs (skirt - t-shirt) vs (dress)
+    try:
+        _sk = means[labels_means.index(18)]
+    except ValueError:
+        _sk = 0
+    try:
+        _sh = means[labels_means.index(15)]
+    except ValueError:
+        _sh = 0
+    try:
+        _tsh = means[labels_means.index(22)]
+    except ValueError:
+        _tsh = 0
+    try:
+        _dr = means[labels_means.index(7)]
+    except ValueError:
+        _dr = 0
+    
+    my_max = np.argmax([np.mean([_sk,_sh]),np.mean([_sk,_tsh]),_dr])
+    print(len(my_msk))
+    if my_max == 0:
+        indexes = np.where(my_msk == 7 or my_msk == 22)
+        for i in indexes:
+            my_msk[0,indexes[:,0],i[1],:] = 15
+        labels.append(15)
+    elif my_max == 1:
+        indexes = np.where(my_msk == 7 or my_msk == 15)
+        for i in indexes:
+            my_msk[0,i[0],i[1],:] = 22
+        labels.append(22)
+    else:
+        indexes = np.where((my_msk == 18).all() or (my_msk == 22).all() or (my_msk == 15).all())
+        for i in indexes:
+            msk[0,1,1,0] = 7
+        labels.append(7)
+
+
+    #Rule 2 : (pants) vs (leggins) vs (shorts)
+    _pa = means[labels_means.index(13)]
+    _leg = means[labels_means.index(21)]
+    _sh = means[labels_means.index(17)]
+    my_max = np.argmax([_pa,_leg,_sh])
+    if my_max == 0:
+        my_msk[np.where(my_msk == 21 or my_msk == 17)] = 13
+        labels.append(13)
+    elif my_max == 1:
+        my_msk[np.where(my_msk == 13 or my_msk == 17)] = 21
+        labels.append(21)
+    else:
+        my_msk[np.where(my_msk == 13 or my_msk == 21)] = 17
+        labels.append(17)
+
+
+
+    #Rule 3 : (boots) vs (shoes) vs (socks)
+    _bo = means[labels_means.index(5)]
+    _sh = means[labels_means.index(16)]
+    _so = means[labels_means.index(19)]
+    my_max = np.argmax([_bo,_sh,_so])
+    if my_max == 0:
+        my_msk[np.where((my_msk == 16) or (my_msk == 19))] = 5
+        labels.append(5)
+    elif my_max == 1:
+        my_msk[np.where(my_msk == 5 or my_msk == 19)] = 16
+        labels.append(16)
+    else:
+        my_msk[np.where(my_msk == 5 or my_msk == 16)] = 19
+        labels.append(19)
+
+
+    #Rule 4 : (vest1) vs (vest2)
+    _v1 = means[labels_means.index(23)]
+    _v2 = means[labels_means.index(24)]
+    my_max = np.argmax([_v1,_v2])
+    if my_max == 0:
+        my_msk[np.where(my_msk == 24)] = 23
+        labels.append(23)
+    else:
+        my_msk[np.where(my_msk == 23)] = 24
+        labels.append(24)
+
+    #Rule 5 : (cardigan) vs (blazer)
+    _ca = means[labels_means.index(20)]
+    _bl = means[labels_means.index(11)]
+    my_max = np.argmax([_ca,_bl])
+    if my_max == 0:
+        my_msk[np.where(my_msk == 11)] = 20
+        labels.append(20)
+    else:
+        my_msk[np.where(my_msk == 20)] = 11
+        labels.append(11)
+    
+
     image = Image.fromarray(msk[0])
 
     if not os.path.exists( save_dir):
@@ -161,17 +260,19 @@ def predict(img_path,num_classes,model_weights,save_dir):
     image.save( save_dir + 'mask.png')
     
 
+
     # Create Dictionary of time
     data = {}
     data['time'] = str(time.time() -t1)
    
-   # Create Dictionary of pic ref
-    data['pic'] = img_path
+    # Create Dictionary of pic
+    data['pic'] = im_path
+
 
     # Create Dictionary of labels used
     data['labels'] = []
     idx = 0
-    for l in labels_means:
+    for l in labels:
         label = {}
         label['label'] = code_colours[l]
         label['num'] = str(l)
@@ -180,7 +281,7 @@ def predict(img_path,num_classes,model_weights,save_dir):
         idx+=1
 
     # Create Dictionary of BoundingBox 
-    bboxes = extract_region(msk[0],labels_means)
+    bboxes = extract_region(my_msk,labels)
     data['bounding_box'] = []
     for bbox in bboxes:
         bb = {}

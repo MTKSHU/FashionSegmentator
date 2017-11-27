@@ -69,13 +69,17 @@ function send_data(){
                 if(parseInt(data['labels'][j]['num']) < 3)
                     offs++;
                 else{
-                    if((label_rules.indexOf(parseInt(data['labels'][j]['num'])))!= -1) 
-                        mapping_bb[data['labels'][j]['num']] = j-offs;
-                    else
-                        add_label_info(j-offs,data['labels'][j]);  
+                    //if((label_rules.indexOf(parseInt(data['labels'][j]['num'])))!= -1) 
+                      //  mapping_bb[data['labels'][j]['num']] = j-offs;
+                    //else
+                    add_label_info(j-offs,data['labels'][j]);  
                 }
             }
 
+
+            //[0.99032825, 0.99077368, 0.97445798, 0.97436851, 0.96344471, 0.97136462, 0.96475309, 0.98189157, 0.98098481]
+            //[1, 2, 3, 7, 8, 13, 15, 17, 22]
+            /*
 
             var boots = getObjects(data,'num','5')[0];
             var dress = getObjects(data,'num','7')[0];
@@ -116,10 +120,12 @@ function send_data(){
                 add_label_info(mapping_bb[rule_el['num']],rule_el);
             }
 
-            var rule_el = max_dress([shirt,t_shirt,blazer]);
-            if(rule_el != -1){
-                rules_res[4] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
+            if(rules_res[0] != 'dress'){
+                var rule_el = max_dress([shirt,t_shirt,blazer]);
+                if(rule_el != -1){
+                    rules_res[4] = rule_el['label'];
+                    add_label_info(mapping_bb[rule_el['num']],rule_el);
+                }
             }
             
             
@@ -140,7 +146,7 @@ function send_data(){
             }
 
 
-
+            */
             $('.label').on('click',function(){
                 var ind = $(this).attr('id');
                 $(".label").removeClass('selected');
@@ -148,7 +154,7 @@ function send_data(){
                 $(".child").remove();
                 add_rect("red",data['bounding_box'][ind]);
             });
-            $('#0').click();         
+            $('.label').first().click();         
             $("#waitbar").addClass('hidden');
             return false;
         },
