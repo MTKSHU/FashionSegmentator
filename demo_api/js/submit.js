@@ -15,6 +15,7 @@ $(document).ready(function(){
         $('#urls').prop("disabled",false);
         $('input[type=file]').prop("disabled",false);
     });
+    
 
     $('#urls').on("change",function(){
         if($(this).val() == "")
@@ -35,7 +36,10 @@ function send_data(){
     var formData = new FormData();
     // Main magic with files here
     var base_url = "http://localhost:8000/";
+    
     $("#waitbar").removeClass('hidden');
+    on_load(true);
+    
     if($('#urls').val() == ""){
         formData.append('pic', $('input[type=file]')[0].files[0]); 
         formData.append('name', $('input[type=file]')[0].files[0].name.split('.')[0]);
@@ -61,92 +65,17 @@ function send_data(){
             $("#res_img").attr('src',pic_path);
             $("li").remove();
 
-            var rules_res = new Array(7);
-            var label_rules = [5,7,11,13,15,16,17,18,19,20,21,22];
-            var mapping_bb = new Array(25);
             var offs = 0;
             for(var j=0;j<data['labels'].length;j++){
                 if(parseInt(data['labels'][j]['num']) < 3)
                     offs++;
                 else{
-                    //if((label_rules.indexOf(parseInt(data['labels'][j]['num'])))!= -1) 
-                      //  mapping_bb[data['labels'][j]['num']] = j-offs;
-                    //else
                     add_label_info(j-offs,data['labels'][j]);  
                 }
             }
 
 
-            //[0.99032825, 0.99077368, 0.97445798, 0.97436851, 0.96344471, 0.97136462, 0.96475309, 0.98189157, 0.98098481]
-            //[1, 2, 3, 7, 8, 13, 15, 17, 22]
-            /*
-
-            var boots = getObjects(data,'num','5')[0];
-            var dress = getObjects(data,'num','7')[0];
-            var blazer = getObjects(data,'num','11')[0];
-            var jeans = getObjects(data,'num','13')[0];
-            var shirt = getObjects(data,'num','15')[0];
-            var shoes = getObjects(data,'num','16')[0];
-            var shorts = getObjects(data,'num','17')[0];
-            var skirt = getObjects(data,'num','18')[0];
-            var socks = getObjects(data,'num','19')[0];
-            var cardigan = getObjects(data,'num','24')[0];
-            var leggins = getObjects(data,'num','21')[0];
-            var t_shirt = getObjects(data,'num','22')[0];
-            var vest = getObjects(data,'num','23')[0];
-            var vest2 = getObjects(data,'num','24')[0];
-
-            var rule_el = max_dress([dress,skirt]);
-            if(rule_el != -1){
-                rules_res[0] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
-            }
-
-            var rule_el = max_dress([jeans,leggins,shorts]);
-            if(rule_el != -1){
-                rules_res[1] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
-            }
-
-            var rule_el = max_dress([boots,shoes,socks]);
-            if(rule_el != -1){
-                rules_res[2] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
-            }
-
-            var rule_el = max_dress([vest,vest2]);
-            if(rule_el != -1){
-                rules_res[3] = rule_el['label'];
-                add_label_info(mapping_bb[rule_el['num']],rule_el);
-            }
-
-            if(rules_res[0] != 'dress'){
-                var rule_el = max_dress([shirt,t_shirt,blazer]);
-                if(rule_el != -1){
-                    rules_res[4] = rule_el['label'];
-                    add_label_info(mapping_bb[rule_el['num']],rule_el);
-                }
-            }
             
-            
-            if(rules_res[0] == undefined && rules_res[4] == undefined ){
-                var rule_el = max_dress([shirt,t_shirt,dress]);
-                if(rule_el != -1){
-                    rules_res[5] = rule_el['label'];
-                    add_label_info(mapping_bb[rule_el['num']],rule_el);
-                }
-            }
-            
-            if(rules_res[4] != 'jacket/blazer') { 
-                var rule_el = max_dress([cardigan,blazer]);
-                if(rule_el != -1){
-                    rules_res[6] = rule_el['label'];
-                    add_label_info(mapping_bb[rule_el['num']],rule_el);
-                }
-            }
-
-
-            */
             $('.label').on('click',function(){
                 var ind = $(this).attr('id');
                 $(".label").removeClass('selected');
@@ -156,11 +85,13 @@ function send_data(){
             });
             $('.label').first().click();         
             $("#waitbar").addClass('hidden');
+            on_load(false);
             return false;
         },
         error: function (XMLHttpRequest, textStatus, errorThrown){
             console.log(XMLHttpRequest)
             $("#waitbar").addClass('hidden');
+            on_load(false);
             alert("Elaboration Error!!");
             return false;
 
@@ -173,11 +104,11 @@ var add_rect = function(color, rect) {
     var $container = $("#container");
     $('<div class="child" />')
     .appendTo($container)
-    .css("left", (rect['min_x']-15) + "px")
-    .css("top", (rect['min_y']-15) + "px")
-    .css("width", (rect['max_x']-rect['min_x']+30)+"px")
-    .css("height", (rect['max_y']-rect['min_y']+30)+"px")
-    .css("border", "5px solid " + color);
+    .css("left", (rect['min_x']-10) + "px")
+    .css("top", (rect['min_y']-10) + "px")
+    .css("width", (rect['max_x']-rect['min_x']+20)+"px")
+    .css("height", (rect['max_y']-rect['min_y']+20)+"px")
+    .css("border", "3px solid " + color);
 
 };
 
@@ -214,4 +145,17 @@ var max_dress = function(arr){
             }
     return el_max;
 
+}
+
+var on_load  = function(load){
+    
+    $('input[type=file]').prop("disabled",load);
+    $("#urls").prop("disabled",load);
+    $("#clear_btn").prop("disabled",load);
+    $("#send_data").prop("disabled",load);
+    
+    if(load)
+        $(".main").css('opacity',0.05)
+    else
+        $(".main").css('opacity',1)
 }
