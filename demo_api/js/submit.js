@@ -48,6 +48,7 @@ function send_data(){
         formData.append('name', $('#urls').val().split('/').pop().split('.')[0]);
     formData.append('urls', $('#urls').val());
     formData.append('zip_result', false);
+    formData.append('heavy', true);
     var result = 
         $.ajax({
         url: base_url + "images/",
@@ -86,12 +87,14 @@ function send_data(){
             $('.label').first().click();         
             $("#waitbar").addClass('hidden');
             on_load(false);
+            $("#clear_btn").click();
             return false;
         },
         error: function (XMLHttpRequest, textStatus, errorThrown){
             console.log(XMLHttpRequest)
             $("#waitbar").addClass('hidden');
             on_load(false);
+            $("#clear_btn").click();
             alert("Elaboration Error!!");
             return false;
 
@@ -104,10 +107,10 @@ var add_rect = function(color, rect) {
     var $container = $("#container");
     $('<div class="child" />')
     .appendTo($container)
-    .css("left", (rect['min_x']-10) + "px")
-    .css("top", (rect['min_y']-10) + "px")
-    .css("width", (rect['max_x']-rect['min_x']+20)+"px")
-    .css("height", (rect['max_y']-rect['min_y']+20)+"px")
+    .css("left", (rect['min_x']-5) + "px")
+    .css("top", (rect['min_y']-5) + "px")
+    .css("width", (rect['max_x']-rect['min_x']+10)+"px")
+    .css("height", (rect['max_y']-rect['min_y']+10)+"px")
     .css("border", "3px solid " + color);
 
 };
