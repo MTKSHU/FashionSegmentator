@@ -32,9 +32,10 @@ class ImageView(viewsets.ModelViewSet):
         pic  = serializer.validated_data.get('pic')            
         pic_urls = serializer.validated_data.get('urls')
         res_zip = serializer.validated_data.get('zip_result')
-            
+        heavy = serializer.validated_data.get('heavy')
+        print(heavy)
         if not pic_urls:
-            obj = ImageUploaded(name = name, pic = pic,zip_result=res_zip)
+            obj = ImageUploaded(name = name, pic = pic,zip_result=res_zip,heavy=heavy)
             obj.save()
             im_path = settings.MEDIA_ROOT+'pics/'+pic.name
             num_classes = 25
@@ -45,7 +46,7 @@ class ImageView(viewsets.ModelViewSet):
                     if image.size[1] > 600:
                         cover = resizeimage.resize_height(image,600)
                         cover.save(im_path,image.format)
-            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
+            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir,heavy)
             if res_zip:
                 # Create response zip file
                 with open(save_dir+'json_data.json', 'w') as outfile:
@@ -73,7 +74,7 @@ class ImageView(viewsets.ModelViewSet):
                         F.name = os.path.basename(pic_urls)
             except:
                 raise ValidationError("Impossibile scaricare correttamente l'immmagine dal web.")
-            obj = ImageUploaded(name = name, urls = pic_urls, pic = F,zip_result=res_zip)
+            obj = ImageUploaded(name = name, urls = pic_urls, pic = F,zip_result=res_zip,heavy=heavy)
             obj.save()
             im_path = settings.MEDIA_ROOT+'pics/'+F.name
             num_classes = 25
@@ -84,7 +85,7 @@ class ImageView(viewsets.ModelViewSet):
                     if image.size[1] > 600:
                         cover = resizeimage.resize_height(image,600)
                         cover.save(im_path,image.format)
-            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir)
+            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir,heavy)
             if res_zip:
                 # Create response zip file
                 with open(save_dir+'json_data.json', 'w') as outfile:
