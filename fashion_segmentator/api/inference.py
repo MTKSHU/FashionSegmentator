@@ -55,6 +55,12 @@ def load(saver, sess, ckpt_path):
     saver.restore(sess, ckpt_path)
     print("Restored model parameters from {}".format(ckpt_path))
 
+def change_label(im,scores,old_lb,new_lb,new_score):
+    for o in old_lb:
+        indexes = np.where(im == o)
+        for i1,i2,i3,i4 in zip(indexes[0],indexes[1],indexes[2],indexes[3]):
+            im[i1,i2,i3,i4] = new_lb
+            scores[0,i2,i3] = new_score
 
 def extract_region(im,label_used):
     a = []
@@ -62,6 +68,7 @@ def extract_region(im,label_used):
     c = []
     d = []
     for lab in label_used:
+        print(lab)
         if lab != 0 and lab != 1 and lab != 2:
             indexes = np.where(im==lab)
             min_y = np.amin(indexes[0])
@@ -75,8 +82,25 @@ def extract_region(im,label_used):
     bboxes = zip(a,b,c,d)
     return bboxes
     
+def filter_label(im,scores,threshold):
+    
+    prop = regionprops(im[0,:,:,0])
+    means = []
+    labels_means = []
+    for pr in prop:
+        indexes = pr.coords
+        scores_tmp = np.array(scores[0,indexes[:,0],indexes[:,1]])
+        means_tmp = np.mean(scores_tmp)
+        if means_tmp >= threshold :
+            means.append(np.mean(scores_tmp))
+            labels_means.append(im[0,indexes[0,0],indexes[0,1],0])
 
-def predict(img_path,num_classes,model_weights,save_dir):
+    print(means)
+    print(labels_means)
+    return means,labels_means
+
+
+def predict(img_path,num_classes,model_weights,save_dir,heavy):
     """Create the model and start the evaluation process."""
     # Prepare image.
     img_orig = tf.image.decode_jpeg(tf.read_file(img_path), channels=3)
@@ -139,23 +163,7 @@ def predict(img_path,num_classes,model_weights,save_dir):
     print('The output file has been saved to {}'.format( save_dir + 'mask.png'))
     print(time.time() - t1)"""
 
-    prop = regionprops(msk[0,:,:,0])
-
-    means = []
-    labels_means = []
-    threshold = 0.95
-    for pr in prop:
-        indexes = pr.coords
-        
-        print(len(indexes))
-        scores_tmp = np.array(scores[0,indexes[:,0],indexes[:,1]])
-        means_tmp = np.mean(scores_tmp)
-        if means_tmp >= threshold :
-            means.append(np.mean(scores_tmp))
-            labels_means.append(msk[0,indexes[0,0],indexes[0,1],0])
-
-    print(means)
-    print(labels_means)
+    means,labels_means = filter_label(msk,scores,0.98)
 
     my_msk = msk
     labels = []
@@ -182,23 +190,11 @@ def predict(img_path,num_classes,model_weights,save_dir):
     _out2 = np.mean([_sk,_tsh])
     my_max = np.argmax([_out1,_out2,_dr])
     if my_max == 0:
-        indexes = np.where((my_msk == 7).any() or (my_msk == 22).any())
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 15
-        labels.append(15)
+        change_label(my_msk,scores,[7,22],15,_sh)
     elif my_max == 1:
-        indexes = np.where((my_msk == 7).any() or (my_msk == 15).any())
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 22
-        labels.append(22)
+        change_label(my_msk,scores,[7,15],22,_tsh)
     else:
-        indexes = np.where((my_msk == 18).any() or (my_msk == 22).any() or (my_msk == 15).any())
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                msk[0,i[1],i[2],0] = 7
-        labels.append(7)
+        change_label(my_msk,scores,[18,22,15],7,_dr)
 
 
     #Rule 2 : (pants) vs (leggins) vs (shorts)
@@ -217,23 +213,11 @@ def predict(img_path,num_classes,model_weights,save_dir):
     my_max = np.argmax([_pa,_leg,_sh])
     
     if my_max == 0:
-        indexes = np.where((my_msk == 21).any() or (my_msk == 17).any())
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 13
-        labels.append(13)
+        change_label(my_msk,scores,[21,17],13,_pa)
     elif my_max == 1:
-        indexes = np.where((my_msk == 13).any() or (my_msk == 17).any())
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 21
-        labels.append(21)
+        change_label(my_msk,scores,[13,17],21,_leg)
     else:
-        indexes = np.where((my_msk == 13).any() or (my_msk == 21).any())
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 17
-        labels.append(17)
+        change_label(my_msk,scores,[13,21],17,_sh)
 
 
 
@@ -253,23 +237,11 @@ def predict(img_path,num_classes,model_weights,save_dir):
     my_max = np.argmax([_bo,_sh,_so])
     
     if my_max == 0:
-        indexes = np.where((my_msk == 16).any() or (my_msk == 19).any())
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 5
-        labels.append(5)
+        change_label(my_msk,scores,[16,19],5,_bo)
     elif my_max == 1:
-        indexes = np.where((my_msk == 5).any() or (my_msk == 19).any())
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 16
-        labels.append(16)
+        change_label(my_msk,scores,[5,19],16,_sh)
     else:
-        indexes = np.where((my_msk == 5).any() or (my_msk == 16).any())
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 19
-        labels.append(19)
+        change_label(my_msk,scores,[5,16],19,_so)
         
         
     #Rule 4 : (cardigan) vs (blazer)
@@ -282,42 +254,30 @@ def predict(img_path,num_classes,model_weights,save_dir):
     except ValueError:
         _bl = 0
 
-    my_max = np.argmax([_bo,_sh])
-    
-    if my_max == 0:
-        indexes = np.where(my_msk == 11)
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 20
-        labels.append(20)
+    my_max = np.argmax([_ca,_bl])
+    if heavy:
+        if my_max == 0:
+            change_label(my_msk,scores,[11,15,22],20,_ca)
+        else:
+            change_label(my_msk,scores,[20,15,22],11,_bl)
     else:
-        indexes = np.where(my_msk == 20)
-        if len(indexes[0]) != 0:
-            for i in indexes:
-                my_msk[0,i[1],i[2],:] = 11
-        labels.append(11)
+        if my_max == 0:
+            change_label(my_msk,scores,[11],20,_ca)
+        else:
+            change_label(my_msk,scores,[20],11,_bl)
     
+    #Rule 5: Coat over the all
+    if heavy:
+        try:
+            _coat = means[labels_means.index(6)]
+        except ValueError:
+            _coat = 0
+        if _coat != 0:
+            change_label(my_msk,scores,[20,11,15,22],6,_coat)
     
     
     # Filter POST edit
-    
-    prop = regionprops(my_msk[0,:,:,0])
-
-    means = []
-    labels_means = []
-    threshold = 0.95
-    for pr in prop:
-        indexes = pr.coords
-        
-        print(len(indexes))
-        scores_tmp = np.array(scores[0,indexes[:,0],indexes[:,1]])
-        means_tmp = np.mean(scores_tmp)
-        if means_tmp >= threshold :
-            means.append(np.mean(scores_tmp))
-            labels_means.append(my_msk[0,indexes[0,0],indexes[0,1],0])
-
-    print(means)
-    print(labels_means)
+    means,labels_means = filter_label(my_msk,scores,0.98)
     
     
 
