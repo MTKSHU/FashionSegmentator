@@ -68,7 +68,6 @@ def extract_region(im,label_used):
     c = []
     d = []
     for lab in label_used:
-        print(lab)
         if lab != 0 and lab != 1 and lab != 2:
             indexes = np.where(im==lab)
             min_y = np.amin(indexes[0])
@@ -257,9 +256,11 @@ def predict(img_path,num_classes,model_weights,save_dir,heavy):
     my_max = np.argmax([_ca,_bl])
     if heavy:
         if my_max == 0:
-            change_label(my_msk,scores,[11,15,22],20,_ca)
+            if _ca > 0:
+                change_label(my_msk,scores,[11,15,22],20,_ca)
         else:
-            change_label(my_msk,scores,[20,15,22],11,_bl)
+            if _bl > 0:
+                change_label(my_msk,scores,[20,15,22],11,_bl)
     else:
         if my_max == 0:
             change_label(my_msk,scores,[11],20,_ca)
