@@ -17,8 +17,5 @@ echo "from django.contrib.auth.models import User; User.objects.create_superuser
 #Start Unicorn Process
 echo Starting Unicorn.
 
-exec gunicorn fashion_segmentator.wsgi:application \
-    --bind 0.0.0.0:8000\
-    --timeout 120
-    --workers 3
-    --log-level debug
+pwd
+exec gunicorn -c gunicorn.config.py fashion_segmentator.wsgi:application
