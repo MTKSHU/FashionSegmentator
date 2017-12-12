@@ -99,7 +99,7 @@ def filter_label(im,scores,threshold):
     return means,labels_means
 
 
-def predict(img_path,num_classes,model_weights,save_dir,heavy):
+def predict(img_path,scale,num_classes,model_weights,save_dir,heavy):
     """Create the model and start the evaluation process."""
     # Prepare image.
     img_orig = tf.image.decode_jpeg(tf.read_file(img_path), channels=3)
@@ -314,10 +314,10 @@ def predict(img_path,num_classes,model_weights,save_dir,heavy):
     data['bounding_box'] = []
     for bbox in bboxes:
         bb = {}
-        bb['min_x'] = bbox[0]
-        bb['max_x'] = bbox[1]
-        bb['min_y'] = bbox[2]
-        bb['max_y'] = bbox[3]
+        bb['min_x'] = int(bbox[0]*scale)
+        bb['max_x'] = int(bbox[1]*scale)
+        bb['min_y'] = int(bbox[2]*scale)
+        bb['max_y'] = int(bbox[3]*scale)
         data.get('bounding_box').append(bb)
     
     

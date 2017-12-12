@@ -41,12 +41,15 @@ class ImageView(viewsets.ModelViewSet):
             num_classes = 25
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600' 
             save_dir = './output/'
+            scale = 1
             with open(im_path, 'r+b') as f:
                 with Image.open(f) as image:
+                    original_size = image.size
                     if image.size[1] > 600:
+                        scale = image.size[1]/600.0
                         cover = resizeimage.resize_height(image,600)
                         cover.save(im_path,image.format)
-            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir,heavy)
+            mask_file, my_json = predict(im_path,scale,num_classes,model_weights,save_dir,heavy)
             if res_zip:
                 # Create response zip file
                 with open(save_dir+'json_data.json', 'w') as outfile:
@@ -60,6 +63,7 @@ class ImageView(viewsets.ModelViewSet):
                 response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
                 return response
             else:
+                my_json['original_size'] =  original_size
                 json_data = json.dumps(my_json)
                 return  HttpResponse(json_data,content_type="application/json")
         else:
@@ -80,12 +84,15 @@ class ImageView(viewsets.ModelViewSet):
             num_classes = 25
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600' 
             save_dir = './output/'
+            scale = 1
             with open(im_path, 'r+b') as f:
                 with Image.open(f) as image:
+                    original_size = image.size
                     if image.size[1] > 600:
+                        scale = image.size[1]/600.0
                         cover = resizeimage.resize_height(image,600)
                         cover.save(im_path,image.format)
-            mask_file, my_json = predict(im_path,num_classes,model_weights,save_dir,heavy)
+            mask_file, my_json = predict(im_path,scale,num_classes,model_weights,save_dir,heavy)
             if res_zip:
                 # Create response zip file
                 with open(save_dir+'json_data.json', 'w') as outfile:
@@ -101,6 +108,7 @@ class ImageView(viewsets.ModelViewSet):
                 response['Content-Disposition'] = 'attachment; filename="result_data.zip"'
                 return response
             else:
+                my_json['original_size'] =  original_size
                 json_data = json.dumps(my_json)
                 return  HttpResponse(json_data,content_type="application/json")
 
