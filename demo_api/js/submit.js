@@ -1,4 +1,4 @@
-
+var scale = 0;
 $(document).ready(function(){
     $("#send_data").on('click', function(e){
         e.preventDefault();
@@ -65,6 +65,7 @@ function send_data(){
             $("#box_result").prop("hidden",false);
             var pic_path = base_url + data['pic'].split('/')[5] + '/' + data['pic'].split('/')[6] + '/' +data['pic'].split('/')[7];
             $("#res_img").attr('src',pic_path);
+            scale = data['original_size'][1]/600.0 
             //$("li").remove();
             $(".child_circ").remove();
             $(".child").remove();
@@ -118,10 +119,10 @@ var add_rect = function(color, rect,text) {
     $('<span class="label label-primary">'+text+'</span>').appendTo(
         $('<div class="child" />')
         .appendTo($container)
-        .css("left", (rect['min_x']-5) + "px")
-        .css("top", (rect['min_y']-5) + "px")
-        .css("width", (rect['max_x']-rect['min_x']+10)+"px")
-        .css("height", (rect['max_y']-rect['min_y']+10)+"px")
+        .css("left", ((rect['min_x']/scale)-5) + "px")
+        .css("top", (rect['min_y']/scale-5) + "px")
+        .css("width", (rect['max_x']/scale-rect['min_x']/scale+10)+"px")
+        .css("height", (rect['max_y']/scale-rect['min_y']/scale+10)+"px")
         .css("border", "3px solid " + color))
     .css("position","relative")
     .css("left", "-3px")
@@ -134,8 +135,8 @@ var add_circ = function(color,index, rect){
     var $container = $("#container");
     $('<div class="child_circ" id="'+index+'"/>')
     .appendTo($container)
-    .css("left", ((rect['min_x']+ rect['max_x'])/2)+ "px")
-    .css("top", ((rect['min_y']+ rect['max_y'])/2) + "px")
+    .css("left", ((rect['min_x']/scale+ rect['max_x']/scale)/2)+ "px")
+    .css("top", ((rect['min_y']/scale+ rect['max_y']/scale)/2) + "px")
     .css("background-color", color)
     .css("cursor","pointer")
     .css("border", "3px solid " + color);
