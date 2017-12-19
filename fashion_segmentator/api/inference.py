@@ -27,6 +27,9 @@ IMG_MEAN = np.array((151.2413, 144.5654, 136.1296), dtype=np.float32)
 NUM_CLASSES = 25
 SAVE_DIR = './output/'
 os.environ['CUDA_VISIBLE_DEVICES'] = "0"
+
+MIN_INSIDE_DIM  =20
+
 def get_arguments():
     """Parse all the arguments provided from the CLI.
     
@@ -80,7 +83,27 @@ def extract_region(im,label_used):
             d.append(max_y)
     bboxes = zip(a,b,c,d)
     return bboxes
-    
+def extract_inside_region(im,label_used,scale):
+    prop = regionprops(im)    
+    centroids = []
+    labels = []
+    for pr in prop:
+        if pr.label not in [0,1,2]:
+            if pr.label in label_used:
+                centroids.append(pr.centroid)
+                labels.append(pr.label)
+    inside_box = []
+    rates = []
+    for c,l in zip(centroids,labels):   
+        tmp = im[int(c[0])-25:int(c[0])+25,int(c[1])-25:int(c[1])+25]
+        tmp_ar = np.reshape(tmp, (1,np.product(tmp.shape)))
+        inside_box.append((int(((c[1])-25)*scale),int(((c[0])-25)*scale)))
+        good_l = (tmp_ar == l).sum()
+        rate = (good_l/2500.0)*100.0
+        print(l,rate)
+        rates.append(rate)
+    return inside_box,rates
+
 def filter_label(im,scores,threshold):
     
     prop = regionprops(im[0,:,:,0])
@@ -319,9 +342,17 @@ def predict(img_path,scale,num_classes,model_weights,save_dir,heavy):
         bb['min_y'] = int(bbox[2]*scale)
         bb['max_y'] = int(bbox[3]*scale)
         data.get('bounding_box').append(bb)
-    
-    
-    
+
+    bb_ins, rate = extract_inside_region(my_msk[0,:,:,0],labels_means,scale)
+
+    data['bounding_box_inside'] = []
+    for bbox in bb_ins:
+        bb = {}
+        bb['min_x'] = bbox[0]
+        bb['max_x'] = bbox[0]+50
+        bb['min_y'] = bbox[1]
+        bb['max_y'] = bbox[1]+50
+        data.get('bounding_box_inside').append(bb)
     return image, data
     
 
