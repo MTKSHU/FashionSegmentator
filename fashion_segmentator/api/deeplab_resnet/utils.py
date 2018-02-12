@@ -83,6 +83,27 @@ label_colours = [(x, x, x) for x in range(56)]
 IMG_MEAN_DEFAULT = np.array((151.2412, 144.5654, 136.1296), dtype=np.float32)
 n_classes = 25
 
+
+def load_graph(frozen_graph_filename):
+    # We load the protobuf file from the disk and parse it to retrieve the
+    # unserialized graph_def
+    with tf.gfile.GFile(frozen_graph_filename, "rb") as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+
+    data = tf.import_graph_def(graph_def, name="", return_elements=['DecodeJpeg:0','fc1_voc12:0'],)
+    inputs = data[0]
+    raw_output = data[1]
+    raw_output_up = tf.image.resize_bilinear(raw_output, tf.shape(inputs)[0:2,])
+    # CRF.
+    raw_output_up = tf.nn.softmax(raw_output_up)
+    raw_output_up = tf.py_func(dense_crf, [raw_output_up, tf.expand_dims(inputs, dim=0)], tf.float32)
+    raw_output_score = tf.reduce_max(raw_output_up,reduction_indices=[3])
+    raw_output_up = tf.argmax(raw_output_up, axis=3)
+    pred = tf.expand_dims(raw_output_up, dim=3)
+    pred_score = tf.expand_dims(raw_output_score,dim=3)    
+    return inputs, pred, pred_score
+
 def decode_labels(mask, num_images=1, num_classes=n_classes):
     """Decode batch of segmentation masks.
     

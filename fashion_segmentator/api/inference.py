@@ -30,6 +30,10 @@ os.environ['CUDA_VISIBLE_DEVICES'] = "0"
 
 MIN_INSIDE_DIM  =20
 
+
+from tensorflow.python.framework import graph_util
+from tensorflow.python.framework import graph_io
+
 def get_arguments():
     """Parse all the arguments provided from the CLI.
     
@@ -57,6 +61,8 @@ def load(saver, sess, ckpt_path):
     ''' 
     saver.restore(sess, ckpt_path)
     print("Restored model parameters from {}".format(ckpt_path))
+
+
 
 def change_label(im,scores,old_lb,new_lb,new_score):
     for o in old_lb:
@@ -122,59 +128,8 @@ def filter_label(im,scores,threshold):
     return means,labels_means
 
 
-def predict(img_path,scale,num_classes,model_weights,save_dir,heavy):
-    """Create the model and start the evaluation process."""
-    # Prepare image.
-    img_orig = tf.image.decode_jpeg(tf.read_file(img_path), channels=3)
-    # Convert RGB to BGR.
-    img_r, img_g, img_b = tf.split(axis=2, num_or_size_splits=3, value=img_orig)
-    img = tf.cast(tf.concat(axis=2, values=[img_b, img_g, img_r]), dtype=tf.float32)
-    # Extract mean.
-    img -= IMG_MEAN 
+def predict(preds,scores,img_path,scale,num_classes,save_dir,heavy,t1):
     
-    # Create network.
-    net = DeepLabResNetModel({'data': tf.expand_dims(img, dim=0)}, is_training=False, num_classes= num_classes)
-
-    # Which variables to load.
-    restore_var = tf.global_variables()
-
-    # Predictions.
-    raw_output = net.layers['fc1_voc12']
-    raw_output_up = tf.image.resize_bilinear(raw_output, tf.shape(img)[0:2,])
-
-    # CRF.
-    raw_output_up = tf.nn.softmax(raw_output_up)
-    raw_output_up = tf.py_func(dense_crf, [raw_output_up, tf.expand_dims(img_orig, dim=0)], tf.float32)
-    raw_output_score = tf.reduce_max(raw_output_up,reduction_indices=[3])
-    raw_output_up = tf.argmax(raw_output_up, dimension=3)
-    pred = tf.expand_dims(raw_output_up, dim=3)
-    pred_score = tf.expand_dims(raw_output_score,dim=3)
-  
-    
-    # Set up TF session and initialize variables. 
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    with tf.Session(config=config) as sess:
-        init = tf.global_variables_initializer()
-    
-        sess.run(init)
-    
-        # Load weights.
-        loader = tf.train.Saver(var_list=restore_var)
-        load(loader, sess,  model_weights)
-    
-        # Perform inference.
-        import time
-        t1 = time.time()
-
-        preds = sess.run(pred)
-
-
-        # scores[0] contiene lo score massimo calcolato per ogni pixel ( 674 x 450 )
-        scores = sess.run(pred_score)
-
-
-    tf.reset_default_graph()
     
 
     msk = decode_labels(preds, num_classes= num_classes)

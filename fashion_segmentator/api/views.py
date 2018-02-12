@@ -18,6 +18,18 @@ from django.conf import settings
 from rest_framework.renderers import JSONRenderer
 from resizeimage import resizeimage
 from PIL import Image
+from deeplab_resnet.utils import load_graph
+import tensorflow as tf 
+import numpy as np
+import time
+
+os.environ['CUDA_VISIBLE_DEVICES'] = "1"
+
+
+print('Loading the segmentation trained model')
+x, y, y_score = load_graph(settings.WEIGHTS_ROOT + 'graph.pb')
+print('Starting Session')
+persistent_sess = tf.Session()
 
 class ImageView(viewsets.ModelViewSet):
 
@@ -49,7 +61,9 @@ class ImageView(viewsets.ModelViewSet):
                         scale = image.size[1]/600.0
                         cover = resizeimage.resize_height(image,600)
                         cover.save(im_path,image.format)
-            mask_file, my_json = predict(im_path,scale,num_classes,model_weights,save_dir,heavy)
+            t1 = time.time()
+            preds, scores = persistent_sess.run([y,y_score],feed_dict={x:np.array(cover)})
+            mask_file, my_json = predict(preds,scores,im_path,scale,num_classes,save_dir,heavy,t1)
             if res_zip:
                 # Create response zip file
                 with open(save_dir+'json_data.json', 'w') as outfile:
@@ -68,6 +82,7 @@ class ImageView(viewsets.ModelViewSet):
                 return  HttpResponse(json_data,content_type="application/json")
         else:
             try:
+                print(pic_urls)
                 r = requests.get(pic_urls, stream=True)
                 if r.status_code == 200:
                     with open(os.path.join(os.path.dirname(__file__), 'img.jpg'), 'wb+') as f:
@@ -92,7 +107,8 @@ class ImageView(viewsets.ModelViewSet):
                         scale = image.size[1]/600.0
                         cover = resizeimage.resize_height(image,600)
                         cover.save(im_path,image.format)
-            mask_file, my_json = predict(im_path,scale,num_classes,model_weights,save_dir,heavy)
+            preds, scores = persistent_sess.run([y,y_score],feed_dict={x:np.array(cover)})
+            mask_file, my_json = predict(preds,scores,im_path,scale,num_classes,save_dir,heavy,t1)
             if res_zip:
                 # Create response zip file
                 with open(save_dir+'json_data.json', 'w') as outfile:
