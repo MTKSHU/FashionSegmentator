@@ -61,8 +61,9 @@ class ImageView(viewsets.ModelViewSet):
                         scale = image.size[1]/600.0
                         cover = resizeimage.resize_height(image,600)
                         cover.save(im_path,image.format)
+            im = Image.open(im_path)
             t1 = time.time()
-            preds, scores = persistent_sess.run([y,y_score],feed_dict={x:np.array(cover)})
+            preds, scores = persistent_sess.run([y,y_score],feed_dict={x:np.array(im)})
             mask_file, my_json = predict(preds,scores,im_path,scale,num_classes,save_dir,heavy,t1)
             if res_zip:
                 # Create response zip file
@@ -107,7 +108,9 @@ class ImageView(viewsets.ModelViewSet):
                         scale = image.size[1]/600.0
                         cover = resizeimage.resize_height(image,600)
                         cover.save(im_path,image.format)
-            preds, scores = persistent_sess.run([y,y_score],feed_dict={x:np.array(cover)})
+            im = Image.open(im_path)
+            t1 = time.time()            
+            preds, scores = persistent_sess.run([y,y_score],feed_dict={x:np.array(im)})
             mask_file, my_json = predict(preds,scores,im_path,scale,num_classes,save_dir,heavy,t1)
             if res_zip:
                 # Create response zip file
