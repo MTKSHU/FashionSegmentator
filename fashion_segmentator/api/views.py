@@ -21,7 +21,7 @@ from PIL import Image
 from deeplab_resnet.utils import load_graph
 import tensorflow as tf 
 import numpy as np
-import time
+import time,shutil
 
 os.environ['CUDA_VISIBLE_DEVICES'] = "1"
 
@@ -45,11 +45,20 @@ class ImageView(viewsets.ModelViewSet):
         pic_urls = serializer.validated_data.get('urls')
         res_zip = serializer.validated_data.get('zip_result')
         heavy = serializer.validated_data.get('heavy')
+
+        
+        
         print(heavy)
         if not pic_urls:
+            im_path = settings.MEDIA_ROOT+'pics/'+pic.name
+            if os.path.exists(im_path):
+                print("Già caricato!")
+                os.remove(im_path)
+            else:
+                print("Non ancora caricato!")
+
             obj = ImageUploaded(name = name, pic = pic,zip_result=res_zip,heavy=heavy)
             obj.save()
-            im_path = settings.MEDIA_ROOT+'pics/'+pic.name
             num_classes = 25
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600' 
             save_dir = './output/'
@@ -57,6 +66,7 @@ class ImageView(viewsets.ModelViewSet):
             with open(im_path, 'r+b') as f:
                 with Image.open(f) as image:
                     original_size = image.size
+                    print(original_size)
                     if image.size[1] > 600:
                         scale = image.size[1]/600.0
                         cover = resizeimage.resize_height(image,600)
@@ -67,6 +77,7 @@ class ImageView(viewsets.ModelViewSet):
             mask_file, my_json = predict(preds,scores,im_path,scale,num_classes,save_dir,heavy,t1)
             if res_zip:
                 # Create response zip file
+                my_json['original_size'] =  original_size
                 with open(save_dir+'json_data.json', 'w') as outfile:
                     json.dump(my_json, outfile)
                 zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
@@ -94,9 +105,15 @@ class ImageView(viewsets.ModelViewSet):
                         F.name = os.path.basename(pic_urls)
             except:
                 raise ValidationError("Impossibile scaricare correttamente l'immmagine dal web.")
+            im_path = settings.MEDIA_ROOT+'pics/'+F.name
+            if os.path.exists(im_path):
+                print("Già caricato!")
+                os.remove(im_path)
+            else:
+                print("Non ancora caricato!")
+            
             obj = ImageUploaded(name = name, urls = pic_urls, pic = F,zip_result=res_zip,heavy=heavy)
             obj.save()
-            im_path = settings.MEDIA_ROOT+'pics/'+F.name
             num_classes = 25
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600' 
             save_dir = './output/'
@@ -114,6 +131,7 @@ class ImageView(viewsets.ModelViewSet):
             mask_file, my_json = predict(preds,scores,im_path,scale,num_classes,save_dir,heavy,t1)
             if res_zip:
                 # Create response zip file
+                my_json['original_size'] =  original_size
                 with open(save_dir+'json_data.json', 'w') as outfile:
                     json.dump(my_json, outfile)
                 zipf = zipfile.ZipFile('result_data.zip', 'w', zipfile.ZIP_DEFLATED)
