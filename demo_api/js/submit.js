@@ -32,27 +32,27 @@ $(document).ready(function(){
 
 
 function send_data(){
-    console.log("Click");
-    var formData = new FormData();
-    // Main magic with files here
-    var base_url = "http://localhost:8000/";
-    
-    $("#waitbar").removeClass('hidden');
-    on_load(true);
-    
-    if($('#urls').val() == ""){
-        formData.append('pic', $('input[type=file]')[0].files[0]); 
-        formData.append('name', $('input[type=file]')[0].files[0].name.split('.')[0]);
-    }
-    else
-        formData.append('name', $('#urls').val().split('/').pop().split('.')[0]);
-    formData.append('urls', $('#urls').val());
-    formData.append('zip_result', false);
-    formData.append('heavy', true);
-    $("#clear_btn").click();
+    var formData = new FormData(); 
+    // Main magic with files here 
+    var base_url = "http://localhost:8000/"; 
+     
+    $("#waitbar").removeClass('hidden'); 
+    on_load(true); 
+     
+    if($('#urls').val() == ""){ 
+        formData.append('pic', $('input[type=file]')[0].files[0]);  
+        formData.append('name', $('input[type=file]')[0].files[0].name.split('.')[0]); 
+    } 
+    else 
+        formData.append('name', $('#urls').val().split('/').pop().split('.')[0]); 
+    formData.append('urls', $('#urls').val()); 
++
+    formData.append('zip_result', false); 
+    formData.append('heavy', true); 
+    $("#clear_btn").click(); 
     var result = 
         $.ajax({
-        url: base_url + "images/",
+        url: base_url + 'images/',
         type:"POST",
         data: formData,     
         contentType: false,
@@ -61,11 +61,12 @@ function send_data(){
         cache:false,
         success: function(data){
             //http://localhost:8000/media/pics/""
-            console.log(data);
+            //console.log(data);
             $("#box_result").prop("hidden",false);
-            var pic_path = base_url + data['pic'].split('/')[5] + '/' + data['pic'].split('/')[6] + '/' +data['pic'].split('/')[7];
+            var pic_path = base_url + data['pic'].split('/')[5] + '/' + data['pic'].split('/')[6] + '/' +data['pic'].split('/')[7]; 
             $("#res_img").attr('src',pic_path);
-            scale = data['original_size'][1]/600.0 
+			$("#res_img").attr('style','max-width:600;max-height:600;');
+			scale = 1;
             //$("li").remove();
             $(".child_circ").remove();
             $(".child").remove();
@@ -139,7 +140,7 @@ var add_circ = function(color,index, rect){
     .css("top", ((rect['min_y']/scale+ rect['max_y']/scale)/2) + "px")
     .css("background-color", color)
     .css("cursor","pointer")
-    .css("border", "3px solid " + color);
+    .css("border", "3px solid #fff");
 }
 
 

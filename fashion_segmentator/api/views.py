@@ -66,11 +66,9 @@ class ImageView(viewsets.ModelViewSet):
             with open(im_path, 'r+b') as f:
                 with Image.open(f) as image:
                     original_size = image.size
-                    print(original_size)
-                    if image.size[1] > 600:
-                        scale = image.size[1]/600.0
-                        cover = resizeimage.resize_height(image,600)
-                        cover.save(im_path,image.format)
+                    scale = 1
+                    image.thumbnail( (600,600) , Image.BICUBIC)
+                    image.save(im_path,image.format)
             im = Image.open(im_path)
             t1 = time.time()
             preds, scores = persistent_sess.run([y,y_score],feed_dict={x:np.array(im)})
@@ -121,10 +119,9 @@ class ImageView(viewsets.ModelViewSet):
             with open(im_path, 'r+b') as f:
                 with Image.open(f) as image:
                     original_size = image.size
-                    if image.size[1] > 600:
-                        scale = image.size[1]/600.0
-                        cover = resizeimage.resize_height(image,600)
-                        cover.save(im_path,image.format)
+                    scale = 1
+                    image.thumbnail( (600,600) , Image.BICUBIC)
+                    image.save(im_path,image.format)
             im = Image.open(im_path)
             t1 = time.time()            
             preds, scores = persistent_sess.run([y,y_score],feed_dict={x:np.array(im)})

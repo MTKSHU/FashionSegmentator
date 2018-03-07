@@ -27,6 +27,20 @@ IMG_MEAN = np.array((151.2413, 144.5654, 136.1296), dtype=np.float32)
 NUM_CLASSES = 25
 SAVE_DIR = './output/'
 os.environ['CUDA_VISIBLE_DEVICES'] = "0"
+"""
+code_colours = ['background', 'skin', 'hair', 'bag', 'belt',  
+                'boots', 'coat', 'dress', 'glasses', 'gloves', 'hat/headband',  
+                'jacket/blazer', 'necklace', 'pants/jeans', 'scarf/tie',   
+                'shirt/blouse',  'shoes', 'shorts', 'skirt', 'socks', 
+                'sweater/cardigan', 'tights/leggings', 'top/t-shirt',  
+                'vest', 'vest2' ,'watch/bracelet']
+"""
+label_threshold = [0.98,0.98,0.98,0.96,0.85,
+                    0.98,0.98,0.98,0.85,0.98,0.95,
+                    0.98,0.90,0.98,0.85,
+                    0.98,0.98,0.98,0.98,0.95,
+                    0.97,0.98,0.98,
+                    0.98,0.98,0.90]
 
 MIN_INSIDE_DIM  =20
 
@@ -119,7 +133,7 @@ def filter_label(im,scores,threshold):
         indexes = pr.coords
         scores_tmp = np.array(scores[0,indexes[:,0],indexes[:,1]])
         means_tmp = np.mean(scores_tmp)
-        if means_tmp >= threshold :
+        if means_tmp >= label_threshold[pr.label] :
             means.append(np.mean(scores_tmp))
             labels_means.append(im[0,indexes[0,0],indexes[0,1],0])
 
