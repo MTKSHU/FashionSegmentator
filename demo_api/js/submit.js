@@ -32,8 +32,10 @@ $(document).ready(function(){
 
 
 function send_data(){
-
+    $("#res_img").attr('src',"");
     $(".alert").remove();
+    $(".child_circ").remove();
+    $(".child").remove();    
     var formData = new FormData(); 
     // Main magic with files here 
     var base_url = "http://localhost:8000/"; 
