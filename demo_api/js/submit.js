@@ -32,6 +32,8 @@ $(document).ready(function(){
 
 
 function send_data(){
+
+    $(".alert").remove();
     var formData = new FormData(); 
     // Main magic with files here 
     var base_url = "http://localhost:8000/"; 
@@ -39,14 +41,14 @@ function send_data(){
     $("#waitbar").removeClass('hidden'); 
     on_load(true); 
      
-    if($('#urls').val() == ""){ 
+    if($('#urls').val() == "" ){
         formData.append('pic', $('input[type=file]')[0].files[0]);  
         formData.append('name', $('input[type=file]')[0].files[0].name.split('.')[0]); 
     } 
     else 
         formData.append('name', $('#urls').val().split('/').pop().split('.')[0]); 
     formData.append('urls', $('#urls').val()); 
-+
+
     formData.append('zip_result', false); 
     formData.append('heavy', true); 
     $("#clear_btn").click(); 
@@ -106,7 +108,11 @@ function send_data(){
             console.log(XMLHttpRequest)
             $("#waitbar").addClass('hidden');
             on_load(false);
-            alert("Elaboration Error!!");
+            if(XMLHttpRequest.responseText.indexOf("Impossibile") != -1)
+            
+                $("#container").append('<div class="alert alert-warning" role="alert"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>Errore! L\'indirizzo dell\'immagine fornito non è corretto!</div>')
+                //alert("Errore! L'indirizzo dell'immagine fornito non è corretto!")
+            else $("#container").append('<div class="alert alert-warning" role="alert"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>'+errorThrown+'</div>')
             return false;
 
         }
@@ -156,3 +162,4 @@ var on_load  = function(load){
         $(".main").css('opacity',1)
     }
 }
+
