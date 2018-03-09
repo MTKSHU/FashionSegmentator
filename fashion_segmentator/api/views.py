@@ -41,14 +41,14 @@ class ImageView(viewsets.ModelViewSet):
         serializer = ImageSerializers(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         name = serializer.validated_data.get('name')
-        pic  = serializer.validated_data.get('pic')            
+        pic  = serializer.validated_data.get('pic')   
         pic_urls = serializer.validated_data.get('urls')
         res_zip = serializer.validated_data.get('zip_result')
         heavy = serializer.validated_data.get('heavy')
 
+        pic_urls = pic_urls.split('?')[0]
         
-        
-        print(heavy)
+        print(pic_urls)
         if not pic_urls:
             im_path = settings.MEDIA_ROOT+'pics/'+pic.name
             if os.path.exists(im_path):
@@ -116,6 +116,7 @@ class ImageView(viewsets.ModelViewSet):
             model_weights = settings.WEIGHTS_ROOT + 'model.ckpt-1600' 
             save_dir = './output/'
             scale = 1
+            im_path = im_path.replace('%','')
             with open(im_path, 'r+b') as f:
                 with Image.open(f) as image:
                     original_size = image.size
